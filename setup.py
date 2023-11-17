@@ -2,17 +2,17 @@ import os
 from setuptools import (setup, find_packages)
 
 with open(
-    os.path.join(os.path.dirname(__file__), "requirements/requirements.txt"), "r"
+    os.path.join(os.path.dirname(__file__), "requirements.txt"), "r"
 ) as fh:
     requirements = fh.readlines()
 
-NAME = "degate-connector"
+NAME = "burrow-connector"
 DESCRIPTION = (
-    "This is a lightweight library that works as a connector to DeGate public SDK."
+    "This is a lightweight library that works as a connector to Burrow public SDK."
 )
-AUTHOR = "DeGate"
-URL = "https://github.com/degatedev/degate-sdk-python.git"
-VERSION = None
+AUTHOR = "Burrow"
+URL = "https://github.com/burrow/burrow-sdk-python.git"
+VERSION = "0.0.1"
 
 about = {}
 
@@ -22,7 +22,7 @@ with open("README.md", "r") as fh:
 root = os.path.abspath(os.path.dirname(__file__))
 
 if not VERSION:
-    with open(os.path.join(root, "degate", "__version__.py")) as f:
+    with open(os.path.join(root, "burrow", "__version__.py")) as f:
         exec(f.read(), about)
 else:
     about["__version__"] = VERSION
@@ -36,7 +36,7 @@ setup(
     long_description_content_type="text/markdown",
     author=AUTHOR,
     url=URL,
-    keywords=["degate", "Public SDK"],
+    keywords=["burrow", "Public SDK"],
     install_requires=[req for req in requirements],
     packages=find_packages(),
     classifiers=[
