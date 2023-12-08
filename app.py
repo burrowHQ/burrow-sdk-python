@@ -34,7 +34,7 @@ def handle_storage_balance_of():
         return error(msg, "1001")
 
 
-@app.route('/storage_deposit', methods=['post'])
+@app.route('/storage_deposit', methods=['POST'])
 def handle_storage_deposit():
     try:
         request_data = request.get_json()
@@ -103,7 +103,7 @@ def handle_list_token_dta():
         return error(msg, "1001")
 
 
-@app.route('/supply', methods=['post'])
+@app.route('/supply', methods=['POST'])
 def handle_supply():
     try:
         request_data = request.get_json()
@@ -124,7 +124,7 @@ def handle_supply():
         return error(msg, "1001")
 
 
-@app.route('/burrow', methods=['post'])
+@app.route('/burrow', methods=['POST'])
 def handle_burrow():
     try:
         request_data = request.get_json()
@@ -144,7 +144,7 @@ def handle_burrow():
         return error(msg, "1001")
 
 
-@app.route('/withdraw', methods=['post'])
+@app.route('/withdraw', methods=['POST'])
 def handle_withdraw():
     try:
         request_data = request.get_json()
@@ -164,7 +164,7 @@ def handle_withdraw():
         return error(msg, "1001")
 
 
-@app.route('/repay_from_wallet', methods=['post'])
+@app.route('/repay_from_wallet', methods=['POST'])
 def handle_repay_from_wallet():
     try:
         request_data = request.get_json()
@@ -184,7 +184,7 @@ def handle_repay_from_wallet():
         return error(msg, "1001")
 
 
-@app.route('/repay_from_supplied', methods=['post'])
+@app.route('/repay_from_supplied', methods=['POST'])
 def handle_repay_from_supplied():
     try:
         request_data = request.get_json()
@@ -204,7 +204,7 @@ def handle_repay_from_supplied():
         return error(msg, "1001")
 
 
-@app.route('/near_withdraw', methods=['post'])
+@app.route('/near_withdraw', methods=['POST'])
 def handle_near_withdraw():
     try:
         request_data = request.get_json()
@@ -223,7 +223,7 @@ def handle_near_withdraw():
         return error(msg, "1001")
 
 
-@app.route('/increase_collateral', methods=['post'])
+@app.route('/increase_collateral', methods=['POST'])
 def handle_increase_collateral():
     try:
         request_data = request.get_json()
@@ -243,7 +243,7 @@ def handle_increase_collateral():
         return error(msg, "1001")
 
 
-@app.route('/decrease_collateral', methods=['post'])
+@app.route('/decrease_collateral', methods=['POST'])
 def handle_decrease_collateral():
     try:
         request_data = request.get_json()
@@ -269,6 +269,16 @@ def handle_send_message():
         request_data = request.get_json()
         message = request_data["message"]
         ret = send_message(message)
+        return success(ret)
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/v1/circulating-supply', methods=['GET'])
+def handle_circulating_supply():
+    try:
+        ret = update_marketcap()
         return success(ret)
     except Exception as e:
         msg = str(e.args)

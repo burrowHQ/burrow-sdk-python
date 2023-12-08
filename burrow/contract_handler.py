@@ -243,3 +243,11 @@ class BurrowHandler:
             }
         )['result']
 
+    def ft_balance_of(self, account_id):
+        return self._signer.view_function(
+            self._contract_id,
+            "ft_balance_of",
+            {
+                "account_id": account_id
+            }
+        )['result']
