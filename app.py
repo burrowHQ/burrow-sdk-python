@@ -3,12 +3,12 @@
 
 from flask import Flask
 from flask import request
-from burrow.burrow import storage_balance_of, get_assets_paged_detailed, get_asset_farms_paged, get_account, get_price_data, list_token_data, deposit, burrow, withdraw, repay_from_wallet, repay_from_supplied, storage_deposit, near_withdraw, increase_collateral, decrease_collateral
+from burrow.burrow import storage_balance_of, get_assets_paged_detailed, get_asset_farms_paged, get_account, get_price_data, list_token_data, deposit, burrow, withdraw, repay_from_wallet, repay_from_supplied, storage_deposit, near_withdraw, increase_collateral, decrease_collateral, send_message
 import logging
 from burrow.tool_util import success, error
 
 
-service_version = "20231117.01"
+service_version = "202311121.01"
 Welcome = 'Welcome to burrow SDK API server, ' + service_version
 app = Flask(__name__)
 
@@ -257,6 +257,18 @@ def handle_decrease_collateral():
         return error("The required field is empty", "1002")
     try:
         ret = decrease_collateral(token_id, amount)
+        return success(ret)
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/send_message', methods=['POST'])
+def handle_send_message():
+    try:
+        request_data = request.get_json()
+        message = request_data["message"]
+        ret = send_message(message)
         return success(ret)
     except Exception as e:
         msg = str(e.args)

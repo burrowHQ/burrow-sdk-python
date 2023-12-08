@@ -234,3 +234,12 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
+    def get_assets(self):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_asset",
+            {
+                "asset_id": "usdt.tether-token.near"
+            }
+        )['result']
+
