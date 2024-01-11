@@ -11,9 +11,13 @@
 
 ---
 
+## NETWORK
+- **TEST_URL**:https://test-api.burrow.finance
+- **PROD_URL**:https://api.burrow.finance
+
 ## 1. Account Query
 
-- **Test Interface URL**: [http://test-api.burrow.finance/storage_balance_of](http://test-api.burrow.finance/storage_balance_of)
+- **Test Interface URL**: [https://test-api.burrow.finance/storage_balance_of](https://test-api.burrow.finance/storage_balance_of)
 - **Method**: POST
 
 **Parameter Description**:
