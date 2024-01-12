@@ -19,14 +19,16 @@ class GlobalConfig:
             self._priceoracle_contract = "priceoracle.near"
             self._near_contract = "wrap.near"
             self._signer_account_id = "juaner.near" if not os.getenv('SIGNER_ACCOUNT_ID') else os.getenv('SIGNER_ACCOUNT_ID')
+            self._burrow_token = "token.burrow.near"
         elif self._near_env == "testnet":
             self._rpc_url = "https://rpc.testnet.near.org" if not os.getenv('NEAR_RPC_URL') else os.getenv('NEAR_RPC_URL')
             self._burrow_contract = "contract.1689937928.burrow.testnet"
             self._private_key = "" if not os.getenv('PRIVATE_KEY') else os.getenv('PRIVATE_KEY')
             self._deposit_yocto = 1
-            self._priceoracle_contract = "priceoracle.testnet"
+            self._priceoracle_contract = "mock-priceoracle.testnet"
             self._near_contract = "wrap.testnet"
             self._signer_account_id = "juaner.testnet" if not os.getenv('SIGNER_ACCOUNT_ID') else os.getenv('SIGNER_ACCOUNT_ID')
+            self._burrow_token = "token.1689937928.burrow.testnet"
         else:
             raise Exception("Invalid NEAR_ENV!")
 
@@ -61,3 +63,7 @@ class GlobalConfig:
     @property
     def signer_account_id(self):
         return self._signer_account_id
+
+    @property
+    def burrow_token(self):
+        return self._burrow_token
