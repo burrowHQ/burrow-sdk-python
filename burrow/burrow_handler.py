@@ -221,7 +221,7 @@ def list_token_data():
 
 
 def deposit(token_id, amount, is_collateral):
-    burrow_handler = BurrowHandler(signer, token_id)
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_deposit = True
     for assets_paged_detailed in assets_paged_detailed_list:
@@ -229,6 +229,7 @@ def deposit(token_id, amount, is_collateral):
             check_deposit = assets_paged_detailed["config"]["can_deposit"]
     if not check_deposit:
         return error("The token not deposit", "1005")
+    burrow_handler = BurrowHandler(signer, token_id)
     if is_collateral:
         extra_decimals = handle_extra_decimals()
         max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
@@ -239,7 +240,7 @@ def deposit(token_id, amount, is_collateral):
 
 
 def burrow(token_id, amount):
-    burrow_handler = BurrowHandler(signer, token_id)
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_borrowed = True
     for assets_paged_detailed in assets_paged_detailed_list:
@@ -247,6 +248,7 @@ def burrow(token_id, amount):
             check_borrowed = assets_paged_detailed["config"]["can_borrow"]
     if not check_borrowed:
         return error("The token not burrow", "1004")
+    burrow_handler = BurrowHandler(signer, token_id)
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
     ret = burrow_handler.burrow(max_amount)
@@ -313,7 +315,7 @@ def increase_collateral(token_id, amount):
 
 
 def decrease_collateral(token_id, amount):
-    burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_collateral = True
     for assets_paged_detailed in assets_paged_detailed_list:
@@ -323,6 +325,7 @@ def decrease_collateral(token_id, amount):
         return error("The token not collateral", "1006")
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
+    burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
     ret = burrow_handler.decrease_collateral(token_id, max_amount)
     return success(ret)
 
@@ -411,7 +414,7 @@ def health_factor(account_id):
 
 
 def max_supply_balance(account_id, token):
-    burrow_handler = BurrowHandler(signer, token)
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_deposit = True
     for assets_paged_detailed in assets_paged_detailed_list:
@@ -419,6 +422,7 @@ def max_supply_balance(account_id, token):
             check_deposit = assets_paged_detailed["config"]["can_deposit"]
     if not check_deposit:
         return error("The token not deposit", "1005")
+    burrow_handler = BurrowHandler(signer, token)
     ft_balance = burrow_handler.ft_balance_of(account_id)
     price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
@@ -862,5 +866,9 @@ if __name__ == "__main__":
     # r = max_supply_balance("juaner1.testnet", "wrap.testnet")
     # print(r)
 
-    r = check_claim_rewards("juaner12.testnet")
+    # r = check_claim_rewards("juaner12.testnet")
+    # print(r)
+
+    r = supply_health_factor("meta-token.near", "juaner.near", "10000000", True)
     print(r)
+
