@@ -3,9 +3,9 @@ import json
 from contract_handler import BurrowHandler
 import globals
 from config import GlobalConfig
+from tool_util import success, error
 
 global_config = GlobalConfig()
-
 signer = globals.get_signer_account(global_config.signer_account_id)
 
 
@@ -56,43 +56,43 @@ def handler_decimal(number, index):
 def storage_balance_of(account_id, token_id):
     burrow_handler = BurrowHandler(signer, token_id)
     ret = burrow_handler.storage_balance_of(account_id)
-    return ret
+    return success(ret)
 
 
 def storage_deposit(account_id, token_id, amount):
     burrow_handler = BurrowHandler(signer, token_id)
     ret = burrow_handler.storage_deposit(account_id, int(amount))
-    return ret
+    return success(ret)
 
 
 def get_assets_paged_detailed():
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     ret = burrow_handler.get_assets_paged_detailed()
-    return ret
+    return success(ret)
 
 
 def get_asset_farms_paged():
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     ret = burrow_handler.get_asset_farms_paged()
-    return ret
+    return success(ret)
 
 
 def get_account(account_id):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     ret = burrow_handler.get_account(account_id)
-    return ret
+    return success(ret)
 
 
 def get_price_data():
     burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
     ret = burrow_handler.get_price_data()
-    return ret
+    return success(ret)
 
 
 def ft_metadata(account_id):
     burrow_handler = BurrowHandler(signer, account_id)
     ret = burrow_handler.ft_metadata()
-    return ret
+    return success(ret)
 
 
 def get_token_price(token_id):
@@ -120,7 +120,7 @@ def handle_token_price(price_data_list):
         price = price_data["price"]
         if price is None:
             continue
-        token_metadata = ft_metadata(price_data["asset_id"])
+        token_metadata = ft_metadata(price_data["asset_id"])["data"]
         p = int(price["multiplier"]) / multiply_decimals((price["decimals"] - token_metadata["decimals"]))
         token_price_data[price_data["asset_id"]] = {"price": p, "symbol": token_metadata["symbol"],
                                                     "decimals": token_metadata["decimals"]}
@@ -130,7 +130,7 @@ def handle_token_price(price_data_list):
 
 
 def handle_extra_decimals():
-    assets_data_list = get_assets_paged_detailed()
+    assets_data_list = get_assets_paged_detailed()["data"]
     extra_decimals = {}
     for assets_data in assets_data_list:
         extra_decimals[assets_data["token_id"]] = assets_data["config"]["extra_decimals"]
@@ -155,12 +155,12 @@ def handle_supply_farm_apy(assets_data, token_price_data, extra_decimals):
 
 def list_token_data():
     ret_data_list = []
-    assets_data_list = get_assets_paged_detailed()
+    assets_data_list = get_assets_paged_detailed()["data"]
     extra_decimals = handle_extra_decimals()
-    price_data_list = get_price_data()
+    price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     ret_farm_data = {}
-    farm_data_list = get_asset_farms_paged()
+    farm_data_list = get_asset_farms_paged()["data"]
     net_tvl_apy = 0
     for farm_data in farm_data_list:
         if "NetTvl" in farm_data:
@@ -173,8 +173,8 @@ def list_token_data():
                         ret_farm_data[reward_token] = {"reward_per_day": farm_reward["reward_per_day"],
                                                        "boosted_shares": farm_reward["boosted_shares"]}
     if global_config.burrow_token in ret_farm_data:
-        reward_per_day = (int(ret_farm_data[global_config.burrow_token]["reward_per_day"]) / 1000000000000000000) * float(token_price_data[global_config.burrow_token]["price"]) * 365
-        boosted_shares = int(ret_farm_data[global_config.burrow_token]["boosted_shares"]) / 1000000000000000000
+        reward_per_day = (int(ret_farm_data[global_config.burrow_token]["reward_per_day"]) / multiply_decimals(19)) * float(token_price_data[global_config.burrow_token]["price"]) * 365
+        boosted_shares = int(ret_farm_data[global_config.burrow_token]["boosted_shares"]) / multiply_decimals(19)
         net_tvl_apy = reward_per_day / boosted_shares
     for assets_data in assets_data_list:
         token_id = assets_data["token_id"]
@@ -217,34 +217,55 @@ def list_token_data():
                 (available_liquidity - available_liquidity * 0.001) * float(token_price_data[token_id]["price"]), 6)
         }
         ret_data_list.append(ret_data)
-    return ret_data_list
+    return success(ret_data_list)
 
 
 def deposit(token_id, amount, is_collateral):
     burrow_handler = BurrowHandler(signer, token_id)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_deposit = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token_id:
+            check_deposit = assets_paged_detailed["can_deposit"]
+    if not check_deposit:
+        return error("The token not deposit", "1005")
     if is_collateral:
         extra_decimals = handle_extra_decimals()
         max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
         ret = burrow_handler.deposit_collateral(amount, max_amount)
     else:
         ret = burrow_handler.deposit(amount)
-    return ret
+    return success(ret)
 
 
 def burrow(token_id, amount):
     burrow_handler = BurrowHandler(signer, token_id)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_borrowed = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token_id:
+            check_borrowed = assets_paged_detailed["can_borrow"]
+    if not check_borrowed:
+        return error("The token not burrow", "1004")
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
     ret = burrow_handler.burrow(max_amount)
-    return ret
+    return success(ret)
 
 
 def withdraw(token_id, amount):
     burrow_handler = BurrowHandler(signer, token_id)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_withdraw = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token_id:
+            check_withdraw = assets_paged_detailed["can_withdraw"]
+    if not check_withdraw:
+        return error("The token not withdraw", "1007")
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
     ret = burrow_handler.withdraw(max_amount)
-    return ret
+    return success(ret)
 
 
 def repay_from_wallet(token_id, amount):
@@ -252,7 +273,7 @@ def repay_from_wallet(token_id, amount):
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
     ret = burrow_handler.repay_from_wallet(amount, max_amount)
-    return ret
+    return success(ret)
 
 
 def repay_from_supplied(token_id, amount):
@@ -260,63 +281,92 @@ def repay_from_supplied(token_id, amount):
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
     ret = burrow_handler.repay_from_supplied(max_amount, token_id)
-    return ret
+    return success(ret)
 
 
 def near_withdraw(amount):
     burrow_handler = BurrowHandler(signer, global_config.near_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_withdraw = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == global_config.near_contract:
+            check_withdraw = assets_paged_detailed["can_withdraw"]
+    if not check_withdraw:
+        return error("The token not withdraw", "1007")
     ret = burrow_handler.near_withdraw(amount)
-    return ret
+    return success(ret)
 
 
 def increase_collateral(token_id, amount):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_collateral = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token_id:
+            check_collateral = assets_paged_detailed["can_use_as_collateral"]
+    if not check_collateral:
+        return error("The token not collateral", "1006")
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
     ret = burrow_handler.increase_collateral(token_id, max_amount)
-    return ret
+    return success(ret)
 
 
 def decrease_collateral(token_id, amount):
     burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_collateral = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token_id:
+            check_collateral = assets_paged_detailed["can_use_as_collateral"]
+    if not check_collateral:
+        return error("The token not collateral", "1006")
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
     ret = burrow_handler.decrease_collateral(token_id, max_amount)
-    return ret
+    return success(ret)
 
 
 def get_assets():
     burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
     ret = burrow_handler.get_assets()
-    return ret
+    return success(ret)
 
 
 def account_stake_booster(amount, duration):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     ret = burrow_handler.account_stake_booster(amount, duration)
-    return ret
+    return success(ret)
 
 
 def account_unstake_booster():
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     ret = burrow_handler.account_unstake_booster()
-    return ret
+    return success(ret)
 
 
 def account_farm_claim_all():
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     ret = burrow_handler.account_farm_claim_all()
-    return ret
+    return success(ret)
 
 
 def get_extra_decimals_and_volatility_ratio():
-    assets_data_list = get_assets_paged_detailed()
+    assets_data_list = get_assets_paged_detailed()["data"]
     extra_decimals = {}
     volatility_ratio = {}
     for assets_data in assets_data_list:
         extra_decimals[assets_data["token_id"]] = assets_data["config"]["extra_decimals"]
         volatility_ratio[assets_data["token_id"]] = assets_data["config"]["volatility_ratio"]
     return extra_decimals, volatility_ratio
+
+
+def get_net_tvl_multiplier_ratio():
+    assets_data_list = get_assets_paged_detailed()["data"]
+    net_tvl_multiplier = {}
+    for assets_data in assets_data_list:
+        net_tvl_multiplier[assets_data["token_id"]] = assets_data["config"]["net_tvl_multiplier"]
+    return net_tvl_multiplier
 
 
 def supply_health_factor_trial(account_data):
@@ -326,7 +376,7 @@ def supply_health_factor_trial(account_data):
     borrowed_data_list = account_data["borrowed"]
     collateral_data_list = account_data["collateral"]
     extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
-    price_data_list = get_price_data()
+    price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0
     total_collateral_amount = 0
@@ -355,13 +405,20 @@ def supply_health_factor_trial(account_data):
 def health_factor(account_id):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     account_data = burrow_handler.get_account(account_id)
-    return supply_health_factor_trial(account_data)
+    return success(supply_health_factor_trial(account_data))
 
 
 def max_supply_balance(account_id, token):
     burrow_handler = BurrowHandler(signer, token)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_deposit = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token:
+            check_deposit = assets_paged_detailed["can_deposit"]
+    if not check_deposit:
+        return error("The token not deposit", "1005")
     ft_balance = burrow_handler.ft_balance_of(account_id)
-    price_data_list = get_price_data()
+    price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     token_decimals = token_price_data[token]["decimals"]
     token_balance = int(ft_balance) / multiply_decimals(token_decimals)
@@ -371,19 +428,25 @@ def max_supply_balance(account_id, token):
         token_balance = 0
     else:
         token_balance = handler_decimal(token_balance, 12)
-    return token_balance
+    return success(token_balance)
 
 
 def max_burrow_balance(account_id, token):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     account_data = burrow_handler.get_account(account_id)
     if account_data is None:
-        return 0
+        return success(0)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_borrowed = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token:
+            check_borrowed = assets_paged_detailed["can_borrow"]
+    if not check_borrowed:
+        return error("The token not burrow", "1004")
     borrowed_data_list = account_data["borrowed"]
     collateral_data_list = account_data["collateral"]
     extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
-    price_data_list = get_price_data()
+    price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0
     total_collateral_amount = 0
@@ -401,20 +464,27 @@ def max_burrow_balance(account_id, token):
             token_decimals = token_price_data[token]["decimals"] + extra_decimals[token]
             assets_balance = (int(assets_paged_detailed["reserved"]) + int(assets_paged_detailed["prot_fee"]) + int(assets_paged_detailed["supplied"]["balance"]) - int(assets_paged_detailed["borrowed"]["balance"])) / multiply_decimals(token_decimals) * 0.999
     ret = min(assets_balance, total_amount)
-    return ret
+    return success(ret)
 
 
 def max_withdraw_balance(account_id, token):
     ret = 0
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_withdraw = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token:
+            check_withdraw = assets_paged_detailed["can_withdraw"]
+    if not check_withdraw:
+        return error("The token not withdraw", "1007")
     account_data = burrow_handler.get_account(account_id)
     if account_data is None:
-        return ret
+        return success(ret)
     supplied_data_list = account_data["supplied"]
     borrowed_data_list = account_data["borrowed"]
     collateral_data_list = account_data["collateral"]
     extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
-    price_data_list = get_price_data()
+    price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0
     total_collateral_amount = 0
@@ -441,18 +511,25 @@ def max_withdraw_balance(account_id, token):
         collateral_balance = collateral_balance / multiply_decimals(token_price_data[token]["decimals"] + extra_decimals[token])
         min_amount = min(collateral_balance, safe_diff)
     ret = max_amount + min_amount
-    return ret
+    return success(ret)
 
 
 def max_adjust_balance(account_id, token):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_collateral = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token:
+            check_collateral = assets_paged_detailed["can_use_as_collateral"]
+    if not check_collateral:
+        return error("The token not collateral", "1006")
     account_data = burrow_handler.get_account(account_id)
     if account_data is None:
-        return 0
+        return success(0)
     supplied_data_list = account_data["supplied"]
     collateral_data_list = account_data["collateral"]
     extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
-    price_data_list = get_price_data()
+    price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_supplied_amount = 0
     total_collateral_amount = 0
@@ -465,18 +542,21 @@ def max_adjust_balance(account_id, token):
             decimals = token_price_data[collateral_data["token_id"]]["decimals"] + extra_decimals[collateral_data["token_id"]]
             total_collateral_amount += int(collateral_data["balance"]) / multiply_decimals(decimals)
     ret = total_collateral_amount + total_supplied_amount
-    return ret
+    return success(ret)
 
 
 def max_repay_from_wallet(account_id, token):
-    supply_balance = float(max_supply_balance(account_id, token))
+    max_supply_data = max_supply_balance(account_id, token)
+    if max_supply_data["code"] != "0":
+        return max_supply_data
+    supply_balance = float(max_supply_data["data"])
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     account_data = burrow_handler.get_account(account_id)
     if account_data is None:
-        return 0
+        return success(0)
     borrowed_data_list = account_data["borrowed"]
     extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
-    price_data_list = get_price_data()
+    price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0.0
     for borrowed_data in borrowed_data_list:
@@ -484,18 +564,18 @@ def max_repay_from_wallet(account_id, token):
             token_decimals = token_price_data[borrowed_data["token_id"]]["decimals"] + extra_decimals[borrowed_data["token_id"]]
             total_borrowed_amount += int(borrowed_data["balance"]) / multiply_decimals(token_decimals)
     ret = min(total_borrowed_amount, supply_balance)
-    return ret
+    return success(ret)
 
 
 def max_repay_from_account(account_id, token):
-    supply_balance = float(max_withdraw_balance(account_id, token))
+    supply_balance = float(max_withdraw_balance(account_id, token)["data"])
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     account_data = burrow_handler.get_account(account_id)
     if account_data is None:
-        return 0
+        return success(0)
     borrowed_data_list = account_data["borrowed"]
     extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
-    price_data_list = get_price_data()
+    price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0.0
     for borrowed_data in borrowed_data_list:
@@ -503,13 +583,13 @@ def max_repay_from_account(account_id, token):
             decimals = token_price_data[borrowed_data["token_id"]]["decimals"] + extra_decimals[borrowed_data["token_id"]]
             total_borrowed_amount += int(borrowed_data["balance"]) / multiply_decimals(decimals)
     ret = min(total_borrowed_amount, supply_balance)
-    return ret
+    return success(ret)
 
 
 def account_apy(account_id, token):
-    token_data_list = list_token_data()
+    token_data_list = list_token_data()["data"]
     extra_decimals = handle_extra_decimals()
-    price_data_list = get_price_data()
+    price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     base_supplied_apy = 0
     base_borrowed_apy = 0
@@ -529,7 +609,7 @@ def account_apy(account_id, token):
         "base_apy": base_borrowed_apy,
         "total_apy": ""
     }
-    account_data = get_account(account_id)
+    account_data = get_account(account_id)["data"]
     supplied_data_list = account_data["supplied"]
     collateral_data_list = account_data["collateral"]
     borrowed_data_list = account_data["borrowed"]
@@ -586,11 +666,22 @@ def account_apy(account_id, token):
         "supplied_apy": ret_supplied_apy_data,
         "borrowed_apy": ret_burrowed_apy_data
     }
-    return ret
+    return success(ret)
 
 
 def supply_health_factor(token, account_id, amount, adjust_flag):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_deposit = True
+    check_collateral = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token:
+            check_deposit = assets_paged_detailed["can_deposit"]
+            check_collateral = assets_paged_detailed["can_use_as_collateral"]
+    if not check_deposit:
+        return error("The token not deposit", "1005")
+    if not check_collateral:
+        return error("The token not collateral", "1006")
     account_data = burrow_handler.get_account(account_id)
     extra_decimals = handle_extra_decimals()
     collateral_data_list = account_data["collateral"]
@@ -610,11 +701,18 @@ def supply_health_factor(token, account_id, amount, adjust_flag):
             "token_id": token
         }
         account_data["collateral"].append(collateral_new_data)
-    return supply_health_factor_trial(account_data)
+    return success(supply_health_factor_trial(account_data))
 
 
 def burrow_health_factor(token, account_id, amount, adjust_flag):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_borrowed = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token:
+            check_borrowed = assets_paged_detailed["can_borrow"]
+    if not check_borrowed:
+        return error("The token not burrow", "1004")
     account_data = burrow_handler.get_account(account_id)
     extra_decimals = handle_extra_decimals()
     borrowed_data_list = account_data["borrowed"]
@@ -634,11 +732,18 @@ def burrow_health_factor(token, account_id, amount, adjust_flag):
             "token_id": token
         }
         account_data["borrowed"].append(borrowed_new_data)
-    return supply_health_factor_trial(account_data)
+    return success(supply_health_factor_trial(account_data))
 
 
 def withdraw_health_factor(token, account_id, amount):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_withdraw = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token:
+            check_withdraw = assets_paged_detailed["can_withdraw"]
+    if not check_withdraw:
+        return error("The token not withdraw", "1007")
     account_data = burrow_handler.get_account(account_id)
     extra_decimals = handle_extra_decimals()
     withdraw_amount_balance = float(amount) * multiply_decimals(extra_decimals[token])
@@ -654,7 +759,7 @@ def withdraw_health_factor(token, account_id, amount):
     for collateral_data in collateral_data_list:
         if collateral_data["token_id"] == token:
             collateral_data["balance"] = int(collateral_data["balance"]) - withdraw_collateral_balance
-    return supply_health_factor_trial(account_data)
+    return success(supply_health_factor_trial(account_data))
 
 
 def repay_from_account_health_factor(token, account_id, amount):
@@ -677,7 +782,48 @@ def repay_from_account_health_factor(token, account_id, amount):
             new_collateral_balance = int(collateral_data["balance"]) + supplied_balance - withdraw_amount_balance
             if int(collateral_data["balance"]) > new_collateral_balance:
                 collateral_data["balance"] = new_collateral_balance
-    return supply_health_factor_trial(account_data)
+    return success(supply_health_factor_trial(account_data))
+
+
+def check_claim_rewards(account_id):
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    account_data = burrow_handler.get_account(account_id)
+    has_non_farmed_assets = account_data["has_non_farmed_assets"]
+    supplied_data_list = account_data["supplied"]
+    borrowed_data_list = account_data["borrowed"]
+    collateral_data_list = account_data["collateral"]
+    extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
+    net_tvl_multiplier = get_net_tvl_multiplier_ratio()
+    price_data_list = get_price_data()["data"]
+    token_price_data = handle_token_price(price_data_list)
+    total_supplied_amount = 0
+    total_borrowed_amount = 0
+    total_collateral_amount = 0
+    for supplied_data in supplied_data_list:
+        decimals = token_price_data[supplied_data["token_id"]]["decimals"] + extra_decimals[supplied_data["token_id"]]
+        total_supplied_amount += (int(supplied_data["balance"]) / multiply_decimals(decimals) *
+                                  token_price_data[supplied_data["token_id"]]["price"]) / (
+                                             net_tvl_multiplier[supplied_data["token_id"]] / 10000)
+    for borrowed_data in borrowed_data_list:
+        decimals = token_price_data[borrowed_data["token_id"]]["decimals"] + extra_decimals[borrowed_data["token_id"]]
+        total_borrowed_amount += (int(borrowed_data["balance"]) / multiply_decimals(decimals) *
+                                  token_price_data[borrowed_data["token_id"]]["price"]) / (
+                                             net_tvl_multiplier[borrowed_data["token_id"]] / 10000)
+    for collateral_data in collateral_data_list:
+        decimals = token_price_data[collateral_data["token_id"]]["decimals"] + extra_decimals[collateral_data["token_id"]]
+        total_collateral_amount += (int(collateral_data["balance"]) / multiply_decimals(decimals) *
+                                    token_price_data[collateral_data["token_id"]]["price"]) * (
+                                               net_tvl_multiplier[collateral_data["token_id"]] / 10000)
+    has_negative_net_liquidity = (total_collateral_amount + total_supplied_amount - total_borrowed_amount) < 0
+    print("total_supplied_amount:", handler_decimal(total_supplied_amount, 16))
+    print("total_borrowed_amount:", total_borrowed_amount)
+    print("total_collateral_amount:", total_collateral_amount)
+    print("has_negative_net_liquidity:", has_negative_net_liquidity)
+    print("has_non_farmed_assets:", has_non_farmed_assets)
+    if not has_non_farmed_assets or has_negative_net_liquidity:
+        return success(False)
+    else:
+        return success(True)
 
 
 if __name__ == "__main__":
@@ -697,11 +843,11 @@ if __name__ == "__main__":
     # r = account_apy("juaner1.testnet", "token.1689937928.burrow.testnet")
     # print(r)
 
-    # r = supply_health_factor("ref.fakes.testnet", "juaner1.testnet", "15000000000000000000000", True)
+    # r = repay_from_account_health_factor("usdc.fakes.testnet", "juaner1.testnet", "756000000")
     # print(r)
 
-    r = max_burrow_balance("juaner1.testnet", "usdc.fakes.testnet")
-    print(r)
+    # r = max_burrow_balance("juaner1.testnet", "usdc.fakes.testnet")
+    # print(r)
 
     # r = max_withdraw_balance("juaner1.testnet", "ref.fakes.testnet")
     # print(r)
@@ -714,3 +860,6 @@ if __name__ == "__main__":
 
     # r = max_supply_balance("juaner1.testnet", "wrap.testnet")
     # print(r)
+
+    r = check_claim_rewards("juaner12.testnet")
+    print(r)

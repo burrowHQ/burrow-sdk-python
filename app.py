@@ -8,14 +8,14 @@ from burrow.burrow_handler import storage_balance_of, get_assets_paged_detailed,
     storage_deposit, near_withdraw, increase_collateral, decrease_collateral, send_message, account_stake_booster, \
     account_unstake_booster, account_farm_claim_all, health_factor, max_supply_balance, max_burrow_balance, \
     max_withdraw_balance, max_adjust_balance, max_repay_from_wallet, max_repay_from_account, account_apy, \
-    supply_health_factor, burrow_health_factor, repay_from_account_health_factor, withdraw_health_factor
+    supply_health_factor, burrow_health_factor, repay_from_account_health_factor, withdraw_health_factor, check_claim_rewards
 import logging
-from burrow.tool_util import success, error, is_number
+from burrow.tool_util import error, is_number
 from burrow.circulating_supply import update_marketcap
 from loguru import logger
 
 
-service_version = "20240112.01"
+service_version = "20240115.01"
 Welcome = 'Welcome to burrow SDK API server, ' + service_version
 app = Flask(__name__)
 
@@ -34,8 +34,7 @@ def handle_storage_balance_of():
     except Exception as e:
         return error("The required field is empty", "1002")
     try:
-        ret = storage_balance_of(account_id, token_id)
-        return success(ret)
+        return storage_balance_of(account_id, token_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -53,8 +52,7 @@ def handle_storage_deposit():
     except Exception as e:
         return error("The required field is empty", "1002")
     try:
-        ret = storage_deposit(account_id, token_id, amount)
-        return success(ret)
+        return storage_deposit(account_id, token_id, amount)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -63,8 +61,7 @@ def handle_storage_deposit():
 @app.route('/get_assets_paged_detailed', methods=['GET'])
 def handle_get_assets_paged():
     try:
-        ret = get_assets_paged_detailed()
-        return success(ret)
+        return get_assets_paged_detailed()
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -73,8 +70,7 @@ def handle_get_assets_paged():
 @app.route('/get_asset_farms_paged', methods=['GET'])
 def handle_get_asset_farms_paged():
     try:
-        ret = get_asset_farms_paged()
-        return success(ret)
+        return get_asset_farms_paged()
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -83,8 +79,7 @@ def handle_get_asset_farms_paged():
 @app.route('/get_account/<account_id>', methods=['GET'])
 def handle_get_account(account_id):
     try:
-        ret = get_account(account_id)
-        return success(ret)
+        return get_account(account_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -93,8 +88,7 @@ def handle_get_account(account_id):
 @app.route('/get_price_data', methods=['GET'])
 def handle_get_price_data():
     try:
-        ret = get_price_data()
-        return success(ret)
+        return get_price_data()
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -103,8 +97,7 @@ def handle_get_price_data():
 @app.route('/list_token_data', methods=['GET'])
 def handle_list_token_dta():
     try:
-        ret = list_token_data()
-        return success(ret)
+        return list_token_data()
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -124,8 +117,7 @@ def handle_supply():
     if token_id is None or token_id == "" or is_collateral is None or is_collateral == "":
         return error("The required field is empty", "1002")
     try:
-        ret = deposit(token_id, amount, is_collateral)
-        return success(ret)
+        return deposit(token_id, amount, is_collateral)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -144,8 +136,7 @@ def handle_burrow():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = burrow(token_id, amount)
-        return success(ret)
+        return burrow(token_id, amount)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -164,8 +155,7 @@ def handle_withdraw():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = withdraw(token_id, amount)
-        return success(ret)
+        return withdraw(token_id, amount)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -184,8 +174,7 @@ def handle_repay_from_wallet():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = repay_from_wallet(token_id, amount)
-        return success(ret)
+        return repay_from_wallet(token_id, amount)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -204,8 +193,7 @@ def handle_repay_from_supplied():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = repay_from_supplied(token_id, amount)
-        return success(ret)
+        return repay_from_supplied(token_id, amount)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -223,8 +211,7 @@ def handle_near_withdraw():
     if amount is None or amount == "":
         return error("The required field is empty", "1002")
     try:
-        ret = near_withdraw(amount)
-        return success(ret)
+        return near_withdraw(amount)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -243,8 +230,7 @@ def handle_increase_collateral():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = increase_collateral(token_id, amount)
-        return success(ret)
+        return increase_collateral(token_id, amount)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -263,8 +249,7 @@ def handle_decrease_collateral():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = decrease_collateral(token_id, amount)
-        return success(ret)
+        return decrease_collateral(token_id, amount)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -275,8 +260,7 @@ def handle_send_message():
     try:
         request_data = request.get_json()
         message = request_data["message"]
-        ret = send_message(message)
-        return success(ret)
+        return send_message(message)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -285,8 +269,7 @@ def handle_send_message():
 @app.route('/v1/circulating-supply', methods=['GET'])
 def handle_circulating_supply():
     try:
-        ret = update_marketcap()
-        return success(ret)
+        return update_marketcap()
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -303,8 +286,7 @@ def handle_account_stake_booster():
     except Exception as e:
         return error("The required field is empty", "1002")
     try:
-        ret = account_stake_booster(amount, duration)
-        return success(ret)
+        return account_stake_booster(amount, duration)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -313,8 +295,7 @@ def handle_account_stake_booster():
 @app.route('/account_unstake_booster', methods=['POST'])
 def handle_account_unstake_booster():
     try:
-        ret = account_unstake_booster()
-        return success(ret)
+        return account_unstake_booster()
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -323,8 +304,7 @@ def handle_account_unstake_booster():
 @app.route('/account_farm_claim_all', methods=['POST'])
 def handle_account_farm_claim_all():
     try:
-        ret = account_farm_claim_all()
-        return success(ret)
+        return account_farm_claim_all()
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -333,8 +313,7 @@ def handle_account_farm_claim_all():
 @app.route('/health_factor/<account_id>', methods=['GET'])
 def handle_health_factor(account_id):
     try:
-        ret = health_factor(account_id)
-        return success(ret)
+        return health_factor(account_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -343,8 +322,7 @@ def handle_health_factor(account_id):
 @app.route('/max_supply_balance/<account_id>/<token>', methods=['GET'])
 def handle_max_supply_balance(account_id, token):
     try:
-        ret = max_supply_balance(account_id, token)
-        return success(ret)
+        return max_supply_balance(account_id, token)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -353,8 +331,7 @@ def handle_max_supply_balance(account_id, token):
 @app.route('/max_burrow_balance/<account_id>/<token>', methods=['GET'])
 def handle_max_burrow_balance(account_id, token):
     try:
-        ret = max_burrow_balance(account_id, token)
-        return success(ret)
+        return max_burrow_balance(account_id, token)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -363,8 +340,7 @@ def handle_max_burrow_balance(account_id, token):
 @app.route('/max_withdraw_balance/<account_id>/<token>', methods=['GET'])
 def handle_max_withdraw_balance(account_id, token):
     try:
-        ret = max_withdraw_balance(account_id, token)
-        return success(ret)
+        return max_withdraw_balance(account_id, token)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -373,8 +349,7 @@ def handle_max_withdraw_balance(account_id, token):
 @app.route('/max_adjust_balance/<account_id>/<token>', methods=['GET'])
 def handle_max_adjust_balance(account_id, token):
     try:
-        ret = max_adjust_balance(account_id, token)
-        return success(ret)
+        return max_adjust_balance(account_id, token)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -383,8 +358,7 @@ def handle_max_adjust_balance(account_id, token):
 @app.route('/max_repay_from_wallet/<account_id>/<token>', methods=['GET'])
 def handle_max_repay_from_wallet(account_id, token):
     try:
-        ret = max_repay_from_wallet(account_id, token)
-        return success(ret)
+        return max_repay_from_wallet(account_id, token)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -393,8 +367,7 @@ def handle_max_repay_from_wallet(account_id, token):
 @app.route('/max_repay_from_account/<account_id>/<token>', methods=['GET'])
 def handle_max_repay_from_account(account_id, token):
     try:
-        ret = max_repay_from_account(account_id, token)
-        return success(ret)
+        return max_repay_from_account(account_id, token)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -403,8 +376,7 @@ def handle_max_repay_from_account(account_id, token):
 @app.route('/account_apy/<account_id>/<token>', methods=['GET'])
 def handle_account_apy(account_id, token):
     try:
-        ret = account_apy(account_id, token)
-        return success(ret)
+        return account_apy(account_id, token)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -429,7 +401,7 @@ def handle_supply_health_factor():
             ret = supply_health_factor(token_id, account_id, amount, True)
         else:
             ret = health_factor(account_id)
-        return success(ret)
+        return ret
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -449,8 +421,7 @@ def handle_burrow_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = burrow_health_factor(token_id, account_id, amount, True)
-        return success(ret)
+        return burrow_health_factor(token_id, account_id, amount, True)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -470,8 +441,7 @@ def handle_increase_collateral_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = supply_health_factor(token_id, account_id, amount, True)
-        return success(ret)
+        return supply_health_factor(token_id, account_id, amount, True)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -491,8 +461,7 @@ def handle_decrease_collateral_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = supply_health_factor(token_id, account_id, amount, False)
-        return success(ret)
+        return supply_health_factor(token_id, account_id, amount, False)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -512,8 +481,7 @@ def handle_withdraw_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = withdraw_health_factor(token_id, account_id, amount)
-        return success(ret)
+        return withdraw_health_factor(token_id, account_id, amount)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -533,8 +501,7 @@ def handle_repay_from_wallet_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = burrow_health_factor(token_id, account_id, amount, False)
-        return success(ret)
+        return burrow_health_factor(token_id, account_id, amount, False)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -554,8 +521,16 @@ def handle_repay_from_account_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        ret = repay_from_account_health_factor(token_id, account_id, amount)
-        return success(ret)
+        return repay_from_account_health_factor(token_id, account_id, amount)
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/check_claim_rewards/<account_id>', methods=['GET'])
+def handle_check_claim_rewards(account_id):
+    try:
+        return check_claim_rewards(account_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
