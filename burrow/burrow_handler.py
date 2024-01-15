@@ -226,7 +226,7 @@ def deposit(token_id, amount, is_collateral):
     check_deposit = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token_id:
-            check_deposit = assets_paged_detailed["can_deposit"]
+            check_deposit = assets_paged_detailed["config"]["can_deposit"]
     if not check_deposit:
         return error("The token not deposit", "1005")
     if is_collateral:
@@ -244,7 +244,7 @@ def burrow(token_id, amount):
     check_borrowed = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token_id:
-            check_borrowed = assets_paged_detailed["can_borrow"]
+            check_borrowed = assets_paged_detailed["config"]["can_borrow"]
     if not check_borrowed:
         return error("The token not burrow", "1004")
     extra_decimals = handle_extra_decimals()
@@ -259,7 +259,7 @@ def withdraw(token_id, amount):
     check_withdraw = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token_id:
-            check_withdraw = assets_paged_detailed["can_withdraw"]
+            check_withdraw = assets_paged_detailed["config"]["can_withdraw"]
     if not check_withdraw:
         return error("The token not withdraw", "1007")
     extra_decimals = handle_extra_decimals()
@@ -290,7 +290,7 @@ def near_withdraw(amount):
     check_withdraw = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == global_config.near_contract:
-            check_withdraw = assets_paged_detailed["can_withdraw"]
+            check_withdraw = assets_paged_detailed["config"]["can_withdraw"]
     if not check_withdraw:
         return error("The token not withdraw", "1007")
     ret = burrow_handler.near_withdraw(amount)
@@ -303,7 +303,7 @@ def increase_collateral(token_id, amount):
     check_collateral = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token_id:
-            check_collateral = assets_paged_detailed["can_use_as_collateral"]
+            check_collateral = assets_paged_detailed["config"]["can_use_as_collateral"]
     if not check_collateral:
         return error("The token not collateral", "1006")
     extra_decimals = handle_extra_decimals()
@@ -318,7 +318,7 @@ def decrease_collateral(token_id, amount):
     check_collateral = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token_id:
-            check_collateral = assets_paged_detailed["can_use_as_collateral"]
+            check_collateral = assets_paged_detailed["config"]["can_use_as_collateral"]
     if not check_collateral:
         return error("The token not collateral", "1006")
     extra_decimals = handle_extra_decimals()
@@ -355,10 +355,12 @@ def get_extra_decimals_and_volatility_ratio():
     assets_data_list = get_assets_paged_detailed()["data"]
     extra_decimals = {}
     volatility_ratio = {}
+    net_tvl_multiplier = {}
     for assets_data in assets_data_list:
         extra_decimals[assets_data["token_id"]] = assets_data["config"]["extra_decimals"]
         volatility_ratio[assets_data["token_id"]] = assets_data["config"]["volatility_ratio"]
-    return extra_decimals, volatility_ratio
+        net_tvl_multiplier[assets_data["token_id"]] = assets_data["config"]["net_tvl_multiplier"]
+    return extra_decimals, volatility_ratio, net_tvl_multiplier
 
 
 def get_net_tvl_multiplier_ratio():
@@ -375,7 +377,7 @@ def supply_health_factor_trial(account_data):
         return 0
     borrowed_data_list = account_data["borrowed"]
     collateral_data_list = account_data["collateral"]
-    extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
+    extra_decimals, volatility_ratio, net_tvl_multiplier = get_extra_decimals_and_volatility_ratio()
     price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0
@@ -414,7 +416,7 @@ def max_supply_balance(account_id, token):
     check_deposit = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
-            check_deposit = assets_paged_detailed["can_deposit"]
+            check_deposit = assets_paged_detailed["config"]["can_deposit"]
     if not check_deposit:
         return error("The token not deposit", "1005")
     ft_balance = burrow_handler.ft_balance_of(account_id)
@@ -440,12 +442,12 @@ def max_burrow_balance(account_id, token):
     check_borrowed = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
-            check_borrowed = assets_paged_detailed["can_borrow"]
+            check_borrowed = assets_paged_detailed["config"]["can_borrow"]
     if not check_borrowed:
         return error("The token not burrow", "1004")
     borrowed_data_list = account_data["borrowed"]
     collateral_data_list = account_data["collateral"]
-    extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
+    extra_decimals, volatility_ratio, net_tvl_multiplier = get_extra_decimals_and_volatility_ratio()
     price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0
@@ -474,7 +476,7 @@ def max_withdraw_balance(account_id, token):
     check_withdraw = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
-            check_withdraw = assets_paged_detailed["can_withdraw"]
+            check_withdraw = assets_paged_detailed["config"]["can_withdraw"]
     if not check_withdraw:
         return error("The token not withdraw", "1007")
     account_data = burrow_handler.get_account(account_id)
@@ -483,7 +485,7 @@ def max_withdraw_balance(account_id, token):
     supplied_data_list = account_data["supplied"]
     borrowed_data_list = account_data["borrowed"]
     collateral_data_list = account_data["collateral"]
-    extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
+    extra_decimals, volatility_ratio, net_tvl_multiplier = get_extra_decimals_and_volatility_ratio()
     price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0
@@ -520,7 +522,7 @@ def max_adjust_balance(account_id, token):
     check_collateral = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
-            check_collateral = assets_paged_detailed["can_use_as_collateral"]
+            check_collateral = assets_paged_detailed["config"]["can_use_as_collateral"]
     if not check_collateral:
         return error("The token not collateral", "1006")
     account_data = burrow_handler.get_account(account_id)
@@ -528,7 +530,7 @@ def max_adjust_balance(account_id, token):
         return success(0)
     supplied_data_list = account_data["supplied"]
     collateral_data_list = account_data["collateral"]
-    extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
+    extra_decimals, volatility_ratio, net_tvl_multiplier = get_extra_decimals_and_volatility_ratio()
     price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_supplied_amount = 0
@@ -555,7 +557,7 @@ def max_repay_from_wallet(account_id, token):
     if account_data is None:
         return success(0)
     borrowed_data_list = account_data["borrowed"]
-    extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
+    extra_decimals, volatility_ratio, net_tvl_multiplier = get_extra_decimals_and_volatility_ratio()
     price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0.0
@@ -574,7 +576,7 @@ def max_repay_from_account(account_id, token):
     if account_data is None:
         return success(0)
     borrowed_data_list = account_data["borrowed"]
-    extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
+    extra_decimals, volatility_ratio, net_tvl_multiplier = get_extra_decimals_and_volatility_ratio()
     price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_borrowed_amount = 0.0
@@ -676,8 +678,8 @@ def supply_health_factor(token, account_id, amount, adjust_flag):
     check_collateral = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
-            check_deposit = assets_paged_detailed["can_deposit"]
-            check_collateral = assets_paged_detailed["can_use_as_collateral"]
+            check_deposit = assets_paged_detailed["config"]["can_deposit"]
+            check_collateral = assets_paged_detailed["config"]["can_use_as_collateral"]
     if not check_deposit:
         return error("The token not deposit", "1005")
     if not check_collateral:
@@ -710,7 +712,7 @@ def burrow_health_factor(token, account_id, amount, adjust_flag):
     check_borrowed = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
-            check_borrowed = assets_paged_detailed["can_borrow"]
+            check_borrowed = assets_paged_detailed["config"]["can_borrow"]
     if not check_borrowed:
         return error("The token not burrow", "1004")
     account_data = burrow_handler.get_account(account_id)
@@ -741,7 +743,7 @@ def withdraw_health_factor(token, account_id, amount):
     check_withdraw = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
-            check_withdraw = assets_paged_detailed["can_withdraw"]
+            check_withdraw = assets_paged_detailed["config"]["can_withdraw"]
     if not check_withdraw:
         return error("The token not withdraw", "1007")
     account_data = burrow_handler.get_account(account_id)
@@ -792,8 +794,7 @@ def check_claim_rewards(account_id):
     supplied_data_list = account_data["supplied"]
     borrowed_data_list = account_data["borrowed"]
     collateral_data_list = account_data["collateral"]
-    extra_decimals, volatility_ratio = get_extra_decimals_and_volatility_ratio()
-    net_tvl_multiplier = get_net_tvl_multiplier_ratio()
+    extra_decimals, volatility_ratio, net_tvl_multiplier = get_extra_decimals_and_volatility_ratio()
     price_data_list = get_price_data()["data"]
     token_price_data = handle_token_price(price_data_list)
     total_supplied_amount = 0
