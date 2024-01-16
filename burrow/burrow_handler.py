@@ -695,16 +695,12 @@ def supply_health_factor(token, account_id, amount, adjust_flag):
 def collateral_health_factor(token, account_id, amount, adjust_flag):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
-    check_deposit = True
     check_collateral = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
-            check_deposit = assets_paged_detailed["config"]["can_deposit"]
             check_collateral = assets_paged_detailed["config"]["can_use_as_collateral"]
     if not check_collateral:
         return error("The token not collateral", "1006")
-    if not check_deposit:
-        return error("The token not deposit", "1005")
     return supply_and_collateral_health_factor(token, account_id, amount, adjust_flag, burrow_handler)
 
 
