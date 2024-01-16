@@ -17,3 +17,13 @@ def error(msg, code=None, data=None):
     return ret
 
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+if __name__ == "__main__":
+    print("############START###########")

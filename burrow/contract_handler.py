@@ -234,3 +234,48 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
+    def get_assets(self):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_asset",
+            {
+                "asset_id": "usdt.tether-token.near"
+            }
+        )['result']
+
+    def ft_balance_of(self, account_id):
+        return self._signer.view_function(
+            self._contract_id,
+            "ft_balance_of",
+            {
+                "account_id": account_id
+            }
+        )['result']
+
+    def account_stake_booster(self, amount: str, duration: int):
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "account_stake_booster",
+            "args": {
+                "receiver_id": global_config.burrow_contract,
+                "amount": amount,
+                "duration": duration
+            },
+        }
+
+    def account_unstake_booster(self):
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "account_unstake_booster",
+            "args": {
+                "receiver_id": global_config.burrow_contract
+            },
+        }
+
+    def account_farm_claim_all(self):
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "account_farm_claim_all",
+            "args": None,
+        }
+
