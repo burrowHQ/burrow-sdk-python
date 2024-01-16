@@ -8,7 +8,8 @@ from burrow.burrow_handler import storage_balance_of, get_assets_paged_detailed,
     storage_deposit, near_withdraw, increase_collateral, decrease_collateral, send_message, account_stake_booster, \
     account_unstake_booster, account_farm_claim_all, health_factor, max_supply_balance, max_burrow_balance, \
     max_withdraw_balance, max_adjust_balance, max_repay_from_wallet, max_repay_from_account, account_apy, \
-    supply_health_factor, burrow_health_factor, repay_from_account_health_factor, withdraw_health_factor, check_claim_rewards
+    supply_health_factor, burrow_health_factor, repay_from_account_health_factor, withdraw_health_factor, \
+    check_claim_rewards, supply_not_collateral_health_factor, collateral_health_factor
 import logging
 from burrow.tool_util import error, is_number
 from burrow.circulating_supply import update_marketcap
@@ -322,7 +323,7 @@ def handle_health_factor(account_id):
 @app.route('/max_supply_balance/<account_id>/<token>', methods=['GET'])
 def handle_max_supply_balance(account_id, token):
     try:
-        return max_supply_balance(account_id, token)
+        return max_supply_balance(account_id, token, True)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -340,7 +341,7 @@ def handle_max_burrow_balance(account_id, token):
 @app.route('/max_withdraw_balance/<account_id>/<token>', methods=['GET'])
 def handle_max_withdraw_balance(account_id, token):
     try:
-        return max_withdraw_balance(account_id, token)
+        return max_withdraw_balance(account_id, token, True)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -400,7 +401,7 @@ def handle_supply_health_factor():
         if is_collateral:
             ret = supply_health_factor(token_id, account_id, amount, True)
         else:
-            ret = health_factor(account_id)
+            ret = supply_not_collateral_health_factor(account_id, token_id)
         return ret
     except Exception as e:
         msg = str(e.args)
@@ -441,7 +442,7 @@ def handle_increase_collateral_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return supply_health_factor(token_id, account_id, amount, True)
+        return collateral_health_factor(token_id, account_id, amount, True)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -461,7 +462,7 @@ def handle_decrease_collateral_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return supply_health_factor(token_id, account_id, amount, False)
+        return collateral_health_factor(token_id, account_id, amount, False)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")

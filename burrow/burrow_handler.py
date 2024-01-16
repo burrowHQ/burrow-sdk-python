@@ -256,7 +256,7 @@ def burrow(token_id, amount):
 
 
 def withdraw(token_id, amount):
-    burrow_handler = BurrowHandler(signer, token_id)
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_withdraw = True
     for assets_paged_detailed in assets_paged_detailed_list:
@@ -266,6 +266,7 @@ def withdraw(token_id, amount):
         return error("The token not withdraw", "1007")
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
+    burrow_handler = BurrowHandler(signer, token_id)
     ret = burrow_handler.withdraw(max_amount)
     return success(ret)
 
@@ -413,14 +414,14 @@ def health_factor(account_id):
     return success(supply_health_factor_trial(account_data))
 
 
-def max_supply_balance(account_id, token):
+def max_supply_balance(account_id, token, is_check_deposit):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_deposit = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
             check_deposit = assets_paged_detailed["config"]["can_deposit"]
-    if not check_deposit:
+    if not check_deposit and is_check_deposit:
         return error("The token not deposit", "1005")
     burrow_handler = BurrowHandler(signer, token)
     ft_balance = burrow_handler.ft_balance_of(account_id)
@@ -473,7 +474,7 @@ def max_burrow_balance(account_id, token):
     return success(ret)
 
 
-def max_withdraw_balance(account_id, token):
+def max_withdraw_balance(account_id, token, is_check_withdraw):
     ret = 0
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
@@ -481,7 +482,7 @@ def max_withdraw_balance(account_id, token):
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
             check_withdraw = assets_paged_detailed["config"]["can_withdraw"]
-    if not check_withdraw:
+    if not check_withdraw and is_check_withdraw:
         return error("The token not withdraw", "1007")
     account_data = burrow_handler.get_account(account_id)
     if account_data is None:
@@ -552,7 +553,7 @@ def max_adjust_balance(account_id, token):
 
 
 def max_repay_from_wallet(account_id, token):
-    max_supply_data = max_supply_balance(account_id, token)
+    max_supply_data = max_supply_balance(account_id, token, False)
     if max_supply_data["code"] != "0":
         return max_supply_data
     supply_balance = float(max_supply_data["data"])
@@ -574,7 +575,7 @@ def max_repay_from_wallet(account_id, token):
 
 
 def max_repay_from_account(account_id, token):
-    supply_balance = float(max_withdraw_balance(account_id, token)["data"])
+    supply_balance = float(max_withdraw_balance(account_id, token, False)["data"])
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     account_data = burrow_handler.get_account(account_id)
     if account_data is None:
@@ -688,6 +689,26 @@ def supply_health_factor(token, account_id, amount, adjust_flag):
         return error("The token not deposit", "1005")
     if not check_collateral:
         return error("The token not collateral", "1006")
+    return supply_and_collateral_health_factor(token, account_id, amount, adjust_flag, burrow_handler)
+
+
+def collateral_health_factor(token, account_id, amount, adjust_flag):
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_deposit = True
+    check_collateral = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token:
+            check_deposit = assets_paged_detailed["config"]["can_deposit"]
+            check_collateral = assets_paged_detailed["config"]["can_use_as_collateral"]
+    if not check_collateral:
+        return error("The token not collateral", "1006")
+    if not check_deposit:
+        return error("The token not deposit", "1005")
+    return supply_and_collateral_health_factor(token, account_id, amount, adjust_flag, burrow_handler)
+
+
+def supply_and_collateral_health_factor(token, account_id, amount, adjust_flag, burrow_handler):
     account_data = burrow_handler.get_account(account_id)
     extra_decimals = handle_extra_decimals()
     collateral_data_list = account_data["collateral"]
@@ -696,9 +717,11 @@ def supply_health_factor(token, account_id, amount, adjust_flag):
         if collateral_data["token_id"] == token:
             token_flag = False
             if adjust_flag:
-                collateral_data["balance"] = int(collateral_data["balance"]) + (float(amount) * multiply_decimals(extra_decimals[token]))
+                collateral_data["balance"] = int(collateral_data["balance"]) + (
+                            float(amount) * multiply_decimals(extra_decimals[token]))
             else:
-                collateral_data["balance"] = int(collateral_data["balance"]) - (float(amount) * multiply_decimals(extra_decimals[token]))
+                collateral_data["balance"] = int(collateral_data["balance"]) - (
+                            float(amount) * multiply_decimals(extra_decimals[token]))
     if token_flag:
         collateral_new_data = {
             "apr": "0",
@@ -710,6 +733,19 @@ def supply_health_factor(token, account_id, amount, adjust_flag):
     return success(supply_health_factor_trial(account_data))
 
 
+def supply_not_collateral_health_factor(account_id, token_id):
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_deposit = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token_id:
+            check_deposit = assets_paged_detailed["config"]["can_deposit"]
+    if not check_deposit:
+        return error("The token not deposit", "1005")
+    account_data = burrow_handler.get_account(account_id)
+    return success(supply_health_factor_trial(account_data))
+
+
 def burrow_health_factor(token, account_id, amount, adjust_flag):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
@@ -717,7 +753,7 @@ def burrow_health_factor(token, account_id, amount, adjust_flag):
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token:
             check_borrowed = assets_paged_detailed["config"]["can_borrow"]
-    if not check_borrowed:
+    if not check_borrowed and adjust_flag:
         return error("The token not burrow", "1004")
     account_data = burrow_handler.get_account(account_id)
     extra_decimals = handle_extra_decimals()
