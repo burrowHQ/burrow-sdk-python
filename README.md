@@ -6,6 +6,9 @@
 | 1001          | Contract call exception     |
 | 1002          | Mandatory parameter missing |
 | 1003          | Incorrect parameter type    |
+| 1003          | The token not burrow    |
+| 1003          | The token not deposit    |
+| 1003          | The token not collateral    |
 
 **Note**: For all inputs involving amounts, the amount should be entered with decimal precision as per the decimal precision in the metadata.
 
@@ -14,6 +17,32 @@
 ## NETWORK
 - **TEST_URL**:https://test-api.burrow.finance
 - **PROD_URL**:https://api.burrow.finance
+
+---
+
+## It is recommended to deploy the service on your own, and the deployment method is as follows
+### 1. clone code
+```
+git clone https://github.com/burrowHQ/burrow-sdk-python.git
+```
+### 2. Creating a virtual environment(Enter the cloned code path first, and then execute the command to create a virtual environment)
+```
+python -m venv venv
+```
+### 4. Entering the virtual environment
+```
+. ./venv/bin/activate
+```
+### 5. Installation dependencies
+```
+pip install -r requirements.txt
+```
+### 6. Start Service
+```
+sh start_server.sh
+```
+
+---
 
 ## 1. Account Query
 
@@ -671,3 +700,695 @@
 | code       | String     | Response code, 0 for success                   |
 | msg        | String     | 'success' for successful return, error message for exceptions |
 | data       | Object     | Contract call parameters                       |
+
+## 15. Account Stake Booster
+
+- **Test Interface URL**: [https://test-api.burrow.finance/account_stake_booster](https://test-api.burrow.finance/account_stake_booster)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name | Field Type | Description                         |
+| ---------- | ---------- |-------------------------------------|
+| duration   | String     | duration                            |
+| amount     | String     | Amount to Stake, precision as per metadata |
+
+**Sample Call**:
+
+```
+{
+  "duration": "1",
+  "amount": "1000000"
+}
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": {
+    "args": {
+      "amount": "1000000",
+      "duration": 1,
+      "receiver_id": "contract.1689937928.burrow.testnet"
+    },
+    "contract_id": "contract.1689937928.burrow.testnet",
+    "method_name": "account_stake_booster"
+  },
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                    |
+| ---------- | ---------- | ---------------------------------------------- |
+| code       | String     | Response code, 0 for success                   |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | Object     | Stake call parameters                       |
+
+## 16. Account Unstake Booster
+
+- **Test Interface URL**: [https://test-api.burrow.finance/account_unstake_booster](https://test-api.burrow.finance/account_unstake_booster)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name | Field Type | Description                                  |
+| ---------- | ---------- |----------------------------------------------|
+
+**Sample Call**:
+
+```
+No parameters required
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": {
+    "args": {
+      "receiver_id": "contract.1689937928.burrow.testnet"
+    },
+    "contract_id": "contract.1689937928.burrow.testnet",
+    "method_name": "account_unstake_booster"
+  },
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                    |
+| ---------- | ---------- | ---------------------------------------------- |
+| code       | String     | Response code, 0 for success                   |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | Object     | Unstake call parameters                       |
+
+## 17. Account Farm Claim All
+
+- **Test Interface URL**: [https://test-api.burrow.finance/account_farm_claim_all](https://test-api.burrow.finance/account_farm_claim_all)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name | Field Type | Description                                  |
+| ---------- | ---------- |----------------------------------------------|
+
+**Sample Call**:
+
+```
+No parameters required
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": {
+    "args": null,
+    "contract_id": "contract.1689937928.burrow.testnet",
+    "method_name": "account_farm_claim_all"
+  },
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | Object     | Claim all call parameters                                     |
+
+## 18. Health Factor
+
+- **Test Interface URL**: [https://test-api.burrow.finance/health_factor/juaner1.testnet](https://test-api.burrow.finance/health_factor/juaner1.testnet)
+- **Method**: GET
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "123.53",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Health level                                                  |
+
+## 19. Max Supply Balance
+
+- **Test Interface URL**: [https://test-api.burrow.finance/max_supply_balance/juaner1.testnet/usdc.fakes.testnet](https://test-api.burrow.finance/max_supply_balance/juaner1.testnet/usdc.fakes.testnet)
+- **Method**: GET
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "697.280525000000",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+| ---------- |------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Max supply balance                                            |
+
+## 20. Max Burrow Balance
+
+- **Test Interface URL**: [https://test-api.burrow.finance/max_burrow_balance/juaner1.testnet/usdc.fakes.testnet](https://test-api.burrow.finance/max_burrow_balance/juaner1.testnet/usdc.fakes.testnet)
+- **Method**: GET
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": 754.6169796403285,
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+| ---------- |------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Max burrow balance                                            |
+
+## 21. Max Withdraw Balance
+
+- **Test Interface URL**: [https://test-api.burrow.finance/max_withdraw_balance/juaner1.testnet/token.1689937928.burrow.testnet](https://test-api.burrow.finance/max_withdraw_balance/juaner1.testnet/token.1689937928.burrow.testnet)
+- **Method**: GET
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": 4.05951705101648,
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+| ---------- |------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Max withdraw balance                                          |
+
+## 22. Max Adjust Balance
+
+- **Test Interface URL**: [https://test-api.burrow.finance/max_adjust_balance/juaner1.testnet/ref.fakes.testnet](https://test-api.burrow.finance/max_adjust_balance/juaner1.testnet/ref.fakes.testnet)
+- **Method**: GET
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": 5033.559727568972,
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+| ---------- |------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Max adjust balance                                            |
+
+## 22. Max Repay From Wallet Balance
+
+- **Test Interface URL**: [https://test-api.burrow.finance/max_repay_from_wallet/juaner1.testnet/wrap.testnet](https://test-api.burrow.finance/max_repay_from_wallet/juaner1.testnet/wrap.testnet)
+- **Method**: GET
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": 79.38022963223223,
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+| ---------- |------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Max repay from wallet balance                                 |
+
+## 23. Max Repay From Account Balance
+
+- **Test Interface URL**: [https://test-api.burrow.finance/max_repay_from_account/juaner.testnet/ref.fakes.testnet](https://test-api.burrow.finance/max_repay_from_account/juaner.testnet/ref.fakes.testnet)
+- **Method**: GET
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": 79.38022963223223,
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+| ---------- |------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Max repay from account balance                                |
+
+## 24. Account APY
+
+- **Test Interface URL**: [https://test-api.burrow.finance/account_apy/juaner1.testnet/usdc.fakes.testnet](https://test-api.burrow.finance/account_apy/juaner1.testnet/usdc.fakes.testnet)
+- **Method**: GET
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": {
+    "borrowed_apy": {
+      "base_apy": 212.49,
+      "total_apy": "212.00",
+      "your_apy_data": [
+        {
+          "token": "ref.fakes.testnet",
+          "your_apy": "-0.16"
+        },
+        {
+          "token": "token.1689937928.burrow.testnet",
+          "your_apy": "-0.33"
+        }
+      ]
+    },
+    "supplied_apy": {
+      "base_apy": 162.69,
+      "total_apy": "163.45",
+      "your_apy_data": [
+        {
+          "token": "token.1689937928.burrow.testnet",
+          "your_apy": "0.72"
+        },
+        {
+          "token": "ref.fakes.testnet",
+          "your_apy": "0.04"
+        }
+      ]
+    }
+  },
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                     |
+|------------|------------|-----------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                    |
+| msg        | String     | 'success' for successful return, error message for exceptions   |
+| data       | Object     | Account APY data                                                |
+
+## 25. Supply Health Factor
+
+- **Test Interface URL**: [https://test-api.burrow.finance/supply_health_factor](https://test-api.burrow.finance/supply_health_factor)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name    | Field Type | Description                                                 |
+|---------------|------------|-------------------------------------------------------------|
+| token_id      | String     | Token to operate on                                         |
+| amount        | String     | Amount to Supply, precision as per metadata                 |
+| account_id    | String     | Account to health factor, precision as per metadata         |
+| is_collateral | Boole      | Whether it is used as collateral, precision as per metadata |
+
+**Sample Call**:
+
+```
+{
+	"token_id": "ref.fakes.testnet",
+	"amount": "15000000000000000000000",
+	"account_id":"juaner1.testnet",
+	"is_collateral":true
+}
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "139.36",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Supply health factor balance                                  |
+
+## 26. Burrow Health Factor
+
+- **Test Interface URL**: [https://test-api.burrow.finance/burrow_health_factor](https://test-api.burrow.finance/burrow_health_factor)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name    | Field Type | Description                                                 |
+|---------------|------------|-------------------------------------------------------------|
+| token_id      | String     | Token to operate on                                         |
+| amount        | String     | Amount to Burrow, precision as per metadata                 |
+| account_id    | String     | Account to health factor, precision as per metadata         |
+
+**Sample Call**:
+
+```
+{
+	"token_id": "ref.fakes.testnet",
+	"amount": "10000000000000000000",
+	"account_id":"juaner1.testnet"
+}
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "123.53",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Burrow health factor balance                                  |
+
+## 27. Increase Collateral Health Factor
+
+- **Test Interface URL**: [https://test-api.burrow.finance/increase_collateral_health_factor](https://test-api.burrow.finance/increase_collateral_health_factor)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name    | Field Type | Description                                              |
+|---------------|------------|----------------------------------------------------------|
+| token_id      | String     | Token to operate on                                      |
+| amount        | String     | Amount to Increase collateral, precision as per metadata |
+| account_id    | String     | Account to health factor, precision as per metadata      |
+
+**Sample Call**:
+
+```
+{
+	"token_id": "ref.fakes.testnet",
+	"amount": "10000000000000000000",
+	"account_id":"juaner1.testnet"
+}
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "123.53",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Increase collateral health factor balance                     |
+
+## 28. Decrease Collateral Health Factor
+
+- **Test Interface URL**: [https://test-api.burrow.finance/decrease_collateral_health_factor](https://test-api.burrow.finance/decrease_collateral_health_factor)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name    | Field Type | Description                                              |
+|---------------|------------|----------------------------------------------------------|
+| token_id      | String     | Token to operate on                                      |
+| amount        | String     | Amount to Decrease collateral, precision as per metadata |
+| account_id    | String     | Account to health factor, precision as per metadata      |
+
+**Sample Call**:
+
+```
+{
+	"token_id": "ref.fakes.testnet",
+	"amount": "10000000000000000000",
+	"account_id":"juaner1.testnet"
+}
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "123.52",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Decrease collateral health factor balance                     |
+
+## 29. Withdraw Health Factor
+
+- **Test Interface URL**: [https://test-api.burrow.finance/withdraw_health_factor](https://test-api.burrow.finance/withdraw_health_factor)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name    | Field Type | Description                                         |
+|---------------|------------|-----------------------------------------------------|
+| token_id      | String     | Token to operate on                                 |
+| amount        | String     | Amount to Withdraw, precision as per metadata       |
+| account_id    | String     | Account to health factor, precision as per metadata |
+
+**Sample Call**:
+
+```
+{
+	"token_id": "ref.fakes.testnet",
+	"amount": "100000000000000000000",
+	"account_id":"juaner1.testnet"
+}
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "123.46",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Withdraw health factor balance                                |
+
+## 30. Repay From Wallet Health Factor
+
+- **Test Interface URL**: [https://test-api.burrow.finance/repay_from_wallet_health_factor](https://test-api.burrow.finance/repay_from_wallet_health_factor)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name    | Field Type | Description                                            |
+|---------------|------------|--------------------------------------------------------|
+| token_id      | String     | Token to operate on                                    |
+| amount        | String     | Amount to Repay from wallet, precision as per metadata |
+| account_id    | String     | Account to health factor, precision as per metadata    |
+
+**Sample Call**:
+
+```
+{
+	"token_id": "ref.fakes.testnet",
+	"amount": "100000000000000000000",
+	"account_id":"juaner1.testnet"
+}
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "123.30",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Repay from wallet health factor balance                       |
+
+## 31. Repay From Account Health Factor
+
+- **Test Interface URL**: [https://test-api.burrow.finance/repay_from_account_health_factor](https://test-api.burrow.finance/repay_from_account_health_factor)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name    | Field Type | Description                                             |
+|---------------|------------|---------------------------------------------------------|
+| token_id      | String     | Token to operate on                                     |
+| amount        | String     | Amount to Repay from account, precision as per metadata |
+| account_id    | String     | Account to health factor, precision as per metadata     |
+
+**Sample Call**:
+
+```
+{
+	"token_id": "ref.fakes.testnet",
+	"amount": "100000000000000000000",
+	"account_id":"juaner1.testnet"
+}
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "123.46",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Repay from account health factor balance                      |
+
+## 31. Repay From Account Health Factor
+
+- **Test Interface URL**: [https://test-api.burrow.finance/repay_from_account_health_factor](https://test-api.burrow.finance/repay_from_account_health_factor)
+- **Method**: POST
+
+**Parameter Description**:
+
+| Field Name    | Field Type | Description                                             |
+|---------------|------------|---------------------------------------------------------|
+| token_id      | String     | Token to operate on                                     |
+| amount        | String     | Amount to Repay from account, precision as per metadata |
+| account_id    | String     | Account to health factor, precision as per metadata     |
+
+**Sample Call**:
+
+```
+{
+	"token_id": "ref.fakes.testnet",
+	"amount": "100000000000000000000",
+	"account_id":"juaner1.testnet"
+}
+```
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": "123.46",
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | String     | Repay from account health factor balance                      |
+
+## 32. Check Claim Rewards
+
+- **Test Interface URL**: [https://test-api.burrow.finance/check_claim_rewards/juaner1.testnet](https://test-api.burrow.finance/check_claim_rewards/juaner1.testnet)
+- **Method**: GET
+
+**Sample Return Data**:
+
+```
+{
+  "code": "0",
+  "data": true,
+  "msg": "success"
+}
+```
+
+**Return Parameter Description**:
+
+| Field Name | Field Type | Description                                                   |
+|------------|------------|---------------------------------------------------------------|
+| code       | String     | Response code, 0 for success                                  |
+| msg        | String     | 'success' for successful return, error message for exceptions |
+| data       | Boole      | True(Prompt needed), False(Not Prompt needed)                 |
+
