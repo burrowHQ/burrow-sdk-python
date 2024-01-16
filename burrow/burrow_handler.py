@@ -224,13 +224,17 @@ def deposit(token_id, amount, is_collateral):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_deposit = True
+    check_collateral = True
     for assets_paged_detailed in assets_paged_detailed_list:
         if assets_paged_detailed["token_id"] == token_id:
             check_deposit = assets_paged_detailed["config"]["can_deposit"]
+            check_collateral = assets_paged_detailed["config"]["can_use_as_collateral"]
     if not check_deposit:
         return error("The token not deposit", "1005")
     burrow_handler = BurrowHandler(signer, token_id)
     if is_collateral:
+        if not check_collateral:
+            return error("The token not collateral", "1006")
         extra_decimals = handle_extra_decimals()
         max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
         ret = burrow_handler.deposit_collateral(amount, max_amount)

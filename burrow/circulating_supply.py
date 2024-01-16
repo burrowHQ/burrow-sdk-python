@@ -1,4 +1,3 @@
-import os
 import requests
 from datetime import datetime
 from contract_handler import BurrowHandler
