@@ -125,7 +125,7 @@ def handle_token_price(price_data_list):
         token_price_data[price_data["asset_id"]] = {"price": p, "symbol": token_metadata["symbol"],
                                                     "decimals": token_metadata["decimals"]}
     for key, value in price_list.items():
-        token_price_data[key] = {"price": value["price"], "symbol": value["symbol"], "decimals": value["decimal"]}
+        token_price_data[key] = {"price": float(value["price"]), "symbol": value["symbol"], "decimals": value["decimal"]}
     return token_price_data
 
 
@@ -856,11 +856,6 @@ def check_claim_rewards(account_id):
                                     token_price_data[collateral_data["token_id"]]["price"]) * (
                                                net_tvl_multiplier[collateral_data["token_id"]] / 10000)
     has_negative_net_liquidity = (total_collateral_amount + total_supplied_amount - total_borrowed_amount) < 0
-    print("total_supplied_amount:", handler_decimal(total_supplied_amount, 16))
-    print("total_borrowed_amount:", total_borrowed_amount)
-    print("total_collateral_amount:", total_collateral_amount)
-    print("has_negative_net_liquidity:", has_negative_net_liquidity)
-    print("has_non_farmed_assets:", has_non_farmed_assets)
     if not has_non_farmed_assets or has_negative_net_liquidity:
         return success(False)
     else:
@@ -902,9 +897,9 @@ if __name__ == "__main__":
     # r = max_supply_balance("juaner1.testnet", "wrap.testnet")
     # print(r)
 
-    # r = check_claim_rewards("juaner12.testnet")
-    # print(r)
-
-    r = supply_health_factor("meta-token.near", "juaner.near", "10000000", True)
+    r = check_claim_rewards("juaner.near")
     print(r)
+
+    # r = supply_health_factor("meta-token.near", "juaner.near", "10000000", True)
+    # print(r)
 
