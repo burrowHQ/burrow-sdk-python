@@ -12,11 +12,11 @@ from burrow.burrow_handler import storage_balance_of, get_assets_paged_detailed,
     check_claim_rewards, supply_not_collateral_health_factor, collateral_health_factor
 import logging
 from burrow.tool_util import error, is_number
-from burrow.circulating_supply import update_marketcap
+from burrow.circulating_supply import update_marketcap, get_circulating_supply
 from loguru import logger
 
 
-service_version = "20240115.01"
+service_version = "20240129.01"
 Welcome = 'Welcome to burrow SDK API server, ' + service_version
 app = Flask(__name__)
 
@@ -271,6 +271,24 @@ def handle_send_message():
 def handle_circulating_supply():
     try:
         return update_marketcap()
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/v2/circulating_supply', methods=['GET'])
+def handle_get_circulating_supply():
+    try:
+        return str(get_circulating_supply())
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/total_supply', methods=['GET'])
+def handle_total_supply():
+    try:
+        return str(1000000000)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
