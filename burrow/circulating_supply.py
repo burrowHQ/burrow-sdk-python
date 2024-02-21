@@ -57,6 +57,25 @@ def update_marketcap():
     return market_cap
 
 
+def get_circulating_supply():
+    token_price = get_token_price("token.burrow.near")
+
+    locked_balances = []
+    for address in brrr_locked_holders:
+        burrow_handler = BurrowHandler(signer, brrr_token)
+        ft_balance = burrow_handler.ft_balance_of(address)
+        parsed_balance = int(ft_balance) / (10 ** 18)
+        value = parsed_balance * token_price
+        locked_balances.append({
+            "address": address,
+            "balance": parsed_balance,
+            "value": value
+        })
+    sum_locked = sum([balance["balance"] for balance in locked_balances])
+    circulating_supply = max_supply - sum_locked
+    return circulating_supply
+
+
 if __name__ == "__main__":
     print("############START###########")
     market_cap = update_marketcap()
