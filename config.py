@@ -29,6 +29,7 @@ class GlobalConfig:
             self._near_contract = "wrap.testnet"
             self._signer_account_id = "juaner.testnet" if not os.getenv('SIGNER_ACCOUNT_ID') else os.getenv('SIGNER_ACCOUNT_ID')
             self._burrow_token = "token.1689937928.burrow.testnet"
+            self._ref_ex = "exchange.ref-dev.testnet"
         else:
             raise Exception("Invalid NEAR_ENV!")
 
@@ -67,3 +68,7 @@ class GlobalConfig:
     @property
     def burrow_token(self):
         return self._burrow_token
+
+    @property
+    def ref_ex(self):
+        return self._ref_ex

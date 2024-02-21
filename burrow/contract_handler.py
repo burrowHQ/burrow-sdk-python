@@ -62,19 +62,19 @@ class BurrowHandler:
             }
         )['result']
 
-    def deposit(self, deposit: str):
+    def deposit(self, amount: str):
         return {
             "contract_id": self._contract_id,
             "method_name": "ft_transfer_call",
             "args": {
                 "receiver_id": global_config.burrow_contract,
-                "amount": deposit,
+                "amount": amount,
                 "msg": ""
             },
             "amount": global_config.deposit_yocto
         }
 
-    def deposit_collateral(self, deposit: str, max_amount: str):
+    def deposit_collateral(self, amount: str, max_amount: str):
         msg = {
             "Execute": {
                 "actions": [{
@@ -90,7 +90,7 @@ class BurrowHandler:
             "method_name": "ft_transfer_call",
             "args": {
                 "receiver_id": global_config.burrow_contract,
-                "amount": deposit,
+                "amount": amount,
                 "msg": json.dumps(msg)
             },
             "amount": global_config.deposit_yocto
@@ -278,4 +278,103 @@ class BurrowHandler:
             "method_name": "account_farm_claim_all",
             "args": None,
         }
+
+    def get_account_all_positions(self, account_id: str):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_account_all_positions",
+            {
+                "account_id": account_id
+            }
+        )['result']
+
+    def get_config(self):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_config",
+            {
+            }
+        )['result']
+
+    def get_unit_lpt_assets(self, pool_ids: list):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_unit_lpt_assets",
+            {
+                "pool_ids": pool_ids
+            }
+        )['result']
+
+    def get_pool_shares(self, account_id: str, pool_id: int):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_pool_shares",
+            {
+                "account_id": account_id,
+                "pool_id": pool_id
+            }
+        )['result']
+
+    def get_shadow_records(self, account_id: str):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_shadow_records",
+            {
+                "account_id": account_id
+            }
+        )['result']
+
+    def shadow_action(self, amount: str, pool_id: int):
+        ret = {
+            "contract_id": self._contract_id,
+            "method_name": "shadow_action",
+            "args": {
+                "action": "ToBurrowland",
+                "pool_id": pool_id,
+                "msg": ""
+            },
+            "amount": global_config.deposit_yocto
+        }
+        if amount != "":
+            ret["args"]["amount"] = amount
+        return ret
+
+    def shadow_action_collateral(self, token_id: str, pool_id: int):
+        msg = {
+            "Execute": {
+                "actions": [{
+                    "PositionIncreaseCollateral": {
+                        "position": token_id,
+                        "asset_amount": {
+                            "token_id": token_id
+                        }
+                    }
+                }]
+            }
+        }
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "ft_transfer_call",
+            "args": {
+                "action": "ToBurrowland",
+                "pool_id": pool_id,
+                "msg": json.dumps(msg)
+            },
+            "amount": global_config.deposit_yocto
+        }
+
+    def withdraw_lp(self, amount: str, pool_id: int):
+        ret = {
+            "contract_id": self._contract_id,
+            "method_name": "shadow_action",
+            "args": {
+                "action": "FromBurrowland",
+                "pool_id": pool_id,
+                "msg": ""
+            },
+            "amount": global_config.deposit_yocto
+        }
+        if amount != "":
+            ret["args"]["amount"] = amount
+        return ret
 

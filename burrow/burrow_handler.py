@@ -243,6 +243,27 @@ def deposit(token_id, amount, is_collateral):
     return success(ret)
 
 
+def deposit_lp(token_id, amount, is_collateral, pool_id):
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_deposit = True
+    check_collateral = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token_id:
+            check_deposit = assets_paged_detailed["config"]["can_deposit"]
+            check_collateral = assets_paged_detailed["config"]["can_use_as_collateral"]
+    if not check_deposit:
+        return error("The token not deposit", "1005")
+    burrow_handler = BurrowHandler(signer, global_config.ref_ex)
+    if is_collateral:
+        if not check_collateral:
+            return error("The token not collateral", "1006")
+        ret = burrow_handler.shadow_action_collateral(token_id, pool_id)
+    else:
+        ret = burrow_handler.shadow_action(amount, pool_id)
+    return success(ret)
+
+
 def burrow(token_id, amount):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
@@ -272,6 +293,20 @@ def withdraw(token_id, amount):
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
     burrow_handler = BurrowHandler(signer, token_id)
     ret = burrow_handler.withdraw(max_amount)
+    return success(ret)
+
+
+def withdraw_lp(token_id, amount, pool_id):
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
+    check_withdraw = True
+    for assets_paged_detailed in assets_paged_detailed_list:
+        if assets_paged_detailed["token_id"] == token_id:
+            check_withdraw = assets_paged_detailed["config"]["can_withdraw"]
+    if not check_withdraw:
+        return error("The token not withdraw", "1007")
+    burrow_handler = BurrowHandler(signer, token_id)
+    ret = burrow_handler.withdraw_lp(amount, pool_id)
     return success(ret)
 
 
@@ -860,6 +895,36 @@ def check_claim_rewards(account_id):
         return success(False)
     else:
         return success(True)
+
+
+def get_account_all_positions(account_id):
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    ret = burrow_handler.get_account_all_positions(account_id)
+    return success(ret)
+
+
+def get_config():
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    ret = burrow_handler.get_config()
+    return success(ret)
+
+
+def get_unit_lpt_assets(contract_id, pool_ids):
+    burrow_handler = BurrowHandler(signer, contract_id)
+    ret = burrow_handler.get_unit_lpt_assets(pool_ids)
+    return success(ret)
+
+
+def get_pool_shares(contract_id, account_id, pool_id):
+    burrow_handler = BurrowHandler(signer, contract_id)
+    ret = burrow_handler.get_pool_shares(account_id, pool_id)
+    return success(ret)
+
+
+def get_shadow_records(contract_id, account_id):
+    burrow_handler = BurrowHandler(signer, contract_id)
+    ret = burrow_handler.get_shadow_records(account_id)
+    return success(ret)
 
 
 if __name__ == "__main__":
