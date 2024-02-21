@@ -4,11 +4,13 @@
 | ------------- | --------------------------- |
 | 0             | Successful API call         |
 | 1001          | Contract call exception     |
-| 1002          | Mandatory parameter missing |
-| 1003          | Incorrect parameter type    |
-| 1003          | The token not burrow    |
-| 1003          | The token not deposit    |
-| 1003          | The token not collateral    |
+| 1002          | The required field is empty |
+| 1003          | Amount Non numeric    |
+| 1004          | The token not burrow    |
+| 1005          | The token not deposit    |
+| 1006          | The token not collateral    |
+| 1007          | The token not withdraw    |
+| 1008          | The pool_id incorrect    |
 
 **Note**: For all inputs involving amounts, the amount should be entered with decimal precision as per the decimal precision in the metadata.
 
