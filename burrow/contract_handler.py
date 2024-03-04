@@ -122,6 +122,30 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
+    def burrow_lp(self, amount: str, token_id: str):
+        msg = {
+            "Execute": {
+                "actions": [{
+                    "PositionBorrow": {
+                        "asset_amount": {
+                            "token_id": "ref.fakes.testnet",
+                            "amount": amount
+                        },
+                        "position": token_id
+                    }
+                }]
+            }
+        }
+        return {
+            "contract_id": global_config.priceoracle_contract,
+            "method_name": "oracle_call",
+            "args": {
+                "receiver_id": self._contract_id,
+                "msg": json.dumps(msg)
+            },
+            "amount": global_config.deposit_yocto
+        }
+
     def near_withdraw(self, amount: str):
         return {
             "contract_id": self._contract_id,
@@ -171,19 +195,55 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
-    def repay_from_supplied(self, amount: str, contract_id: str):
+    def repay_from_wallet_lp(self, amount: str, token_id: str):
         return {
-            "contract_id": global_config.burrow_contract,
+            "contract_id": self._contract_id,
+            "method_name": "execute",
+            "args": {
+                "actions": [{
+                    "PositionRepay": {
+                        "position": token_id,
+                        "asset_amount": {
+                            "token_id": "ref.fakes.testnet",
+                            "amount": amount
+                        }
+                    }
+                }]
+            },
+            "amount": global_config.deposit_yocto
+        }
+
+    def repay_from_supplied(self, amount: str, token_id: str):
+        return {
+            "contract_id": self._contract_id,
             "method_name": "execute",
             "args": {
                 "actions": [
                     {
                         "Repay": {
-                            "token_id": contract_id,
+                            "token_id": token_id,
                             "max_amount": amount
                         }
                     }
                 ]
+            },
+            "amount": global_config.deposit_yocto
+        }
+
+    def repay_from_supplied_lp(self, amount: str, token_id: str):
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "execute",
+            "args": {
+                "actions": [{
+                    "PositionRepay": {
+                        "position": token_id,
+                        "asset_amount": {
+                            "token_id": "ref.fakes.testnet",
+                            "amount": amount
+                        }
+                    }
+                }]
             },
             "amount": global_config.deposit_yocto
         }
@@ -219,6 +279,30 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
+    def decrease_collateral_lp(self, token_id: str, amount: str):
+        msg = {
+            "Execute": {
+                "actions": [{
+                    "PositionDecreaseCollateral": {
+                        "position": token_id,
+                        "asset_amount": {
+                            "token_id": token_id,
+                            "amount": amount
+                        }
+                    }
+                }]
+            }
+        }
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "oracle_call",
+            "args": {
+                "receiver_id": global_config.burrow_contract,
+                "msg": json.dumps(msg)
+            },
+            "amount": global_config.deposit_yocto
+        }
+
     def increase_collateral(self, token_id: str, amount: str):
         return {
             "contract_id": self._contract_id,
@@ -228,6 +312,24 @@ class BurrowHandler:
                     "IncreaseCollateral": {
                         "token_id": token_id,
                         "max_amount": amount
+                    }
+                }]
+            },
+            "amount": global_config.deposit_yocto
+        }
+
+    def increase_collateral_lp(self, token_id: str, amount: str):
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "execute",
+            "args": {
+                "actions": [{
+                    "PositionIncreaseCollateral": {
+                        "position": token_id,
+                        "asset_amount": {
+                            "token_id": token_id,
+                            "amount": amount
+                        }
                     }
                 }]
             },
