@@ -84,9 +84,59 @@ def get_account(account_id):
 
 
 def get_price_data():
-    burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
-    ret = burrow_handler.get_price_data()
+    burrow_contract_config = get_config()["data"]
+    if burrow_contract_config["enable_pyth_oracle"]:
+        ret = get_pyth_oracle_price()
+    else:
+        burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
+        ret = burrow_handler.get_price_data()
     return success(ret)
+
+
+def get_pyth_oracle_price():
+    import time
+    nanoseconds = int(time.time()) * 1000000000
+    price_list = []
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+    token_pyth_infos = burrow_handler.get_all_token_pyth_infos()
+    # print("get_all_token_pyth_infos:", token_pyth_infos)
+    near_price = 0
+    for key, values in token_pyth_infos.items():
+        if values["default_price"] is not None:
+            pyth_price_data = {"multiplier": int(values["default_price"]["multiplier"]), "decimals": values["default_price"]["decimals"]}
+        else:
+            if key == global_config.nearx_token_contract_id:
+                burrow_handler = BurrowHandler(signer, global_config.nearx_token_contract_id)
+                nearx_price_ratio = burrow_handler.get_nearx_price()
+                usd_price = int(nearx_price_ratio) / (10 ** 24) * near_price
+            elif key == global_config.linear_token_contract_id:
+                burrow_handler = BurrowHandler(signer, global_config.linear_token_contract_id)
+                linear_price_ratio = burrow_handler.ft_price()
+                usd_price = int(linear_price_ratio) / (10 ** 24) * near_price
+            elif key == global_config.stnear_token_contract_id:
+                burrow_handler = BurrowHandler(signer, global_config.stnear_token_contract_id)
+                get_st_near_price = burrow_handler.get_st_near_price()
+                usd_price = int(get_st_near_price) / (10 ** 24) * near_price
+            else:
+                burrow_handler = BurrowHandler(signer, global_config.pyth_oracle_contract_id)
+                token_pyth_oracle_price = burrow_handler.get_price(values["price_identifier"])
+                # print("token_pyth_oracle_price:", token_pyth_oracle_price)
+                if token_pyth_oracle_price is None:
+                    usd_price = 0
+                else:
+                    usd_price = int(token_pyth_oracle_price["price"])*(10**(token_pyth_oracle_price["expo"]))
+                    if key == global_config.near_contract:
+                        near_price = usd_price
+            if "fraction_digits" in values and values["fraction_digits"] is not None:
+                fraction_digits = values["fraction_digits"]
+            else:
+                fraction_digits = 4
+            discrepancy_denominator = 10**fraction_digits
+            pyth_price_data = {"multiplier": int(usd_price * discrepancy_denominator), "decimals": values["decimals"] + fraction_digits}
+        price_data = {"asset_id": key, "price": pyth_price_data}
+        price_list.append(price_data)
+    ret_price_data = {"timestamp": nanoseconds, "prices": price_list}
+    return ret_price_data
 
 
 def ft_metadata(account_id):

@@ -480,3 +480,43 @@ class BurrowHandler:
             ret["args"]["amount"] = amount
         return ret
 
+    def get_all_token_pyth_infos(self):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_all_token_pyth_infos",
+            {
+            }
+        )['result']
+
+    def get_nearx_price(self):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_nearx_price",
+            {
+            }
+        )['result']
+
+    def ft_price(self):
+        return self._signer.view_function(
+            self._contract_id,
+            "ft_price",
+            {
+            }
+        )['result']
+
+    def get_st_near_price(self):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_st_near_price",
+            {
+            }
+        )['result']
+
+    def get_price(self, price_identifier):
+        return self._signer.view_function(
+            self._contract_id,
+            "get_price",
+            {
+                "price_identifier": price_identifier
+            }
+        )['result']
