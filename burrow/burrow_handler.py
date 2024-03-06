@@ -50,7 +50,13 @@ def multiply_decimals(decimals: int):
 
 
 def handler_decimal(number, index):
-    return ("{:.%sf}" % index).format(number)
+    # return ("{:.%sf}" % index).format(number)
+    import decimal
+    decimal.getcontext().prec = 30
+    x = decimal.Decimal(str(number))
+    x_str = str(x)
+    result = decimal.Decimal(x_str[:x_str.index('.') + 1 + index])
+    return result
 
 
 def storage_balance_of(account_id, token_id):
@@ -1078,5 +1084,8 @@ if __name__ == "__main__":
     # r = supply_health_factor("meta-token.near", "juaner.near", "10000000", True)
     # print(r)
 
-    rr = supply_health_factor_trial("account_data", "shadow_ref_v1-711", "101qq.testnet")
-    print(rr)
+    # rr = supply_health_factor_trial("account_data", "shadow_ref_v1-711", "101qq.testnet")
+    # print(rr)
+
+    a = handler_decimal(3339.994995912698, 11)
+    print(a)
