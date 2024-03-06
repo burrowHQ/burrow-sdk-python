@@ -85,7 +85,7 @@ def get_account(account_id):
 
 def get_price_data():
     burrow_contract_config = get_config()["data"]
-    if burrow_contract_config["enable_pyth_oracle"]:
+    if "enable_pyth_oracle" in burrow_contract_config and burrow_contract_config["enable_pyth_oracle"] is True:
         ret = get_pyth_oracle_price()
     else:
         burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
