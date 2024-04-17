@@ -20,6 +20,10 @@ class GlobalConfig:
             self._near_contract = "wrap.near"
             self._signer_account_id = "juaner.near" if not os.getenv('SIGNER_ACCOUNT_ID') else os.getenv('SIGNER_ACCOUNT_ID')
             self._burrow_token = "token.burrow.near"
+            self._pyth_oracle_contract_id = "pyth-oracle.near"
+            self._nearx_token_contract_id = "v2-nearx.stader-labs.near"
+            self._linear_token_contract_id = "linear-protocol.near"
+            self._stnear_token_contract_id = "meta-pool.near"
         elif self._near_env == "testnet":
             self._rpc_url = "https://rpc.testnet.near.org" if not os.getenv('NEAR_RPC_URL') else os.getenv('NEAR_RPC_URL')
             self._burrow_contract = "contract.1689937928.burrow.testnet"
@@ -30,6 +34,10 @@ class GlobalConfig:
             self._signer_account_id = "juaner.testnet" if not os.getenv('SIGNER_ACCOUNT_ID') else os.getenv('SIGNER_ACCOUNT_ID')
             self._burrow_token = "token.1689937928.burrow.testnet"
             self._ref_ex = "exchange.ref-dev.testnet"
+            self._pyth_oracle_contract_id = "pyth-oracle.testnet"
+            self._nearx_token_contract_id = "v2-nearx.staderlabs.testnet"
+            self._linear_token_contract_id = "linear-protocol.testnet"
+            self._stnear_token_contract_id = "meta-v2.pool.testnet"
         else:
             raise Exception("Invalid NEAR_ENV!")
 
@@ -72,3 +80,19 @@ class GlobalConfig:
     @property
     def ref_ex(self):
         return self._ref_ex
+
+    @property
+    def pyth_oracle_contract_id(self):
+        return self._pyth_oracle_contract_id
+
+    @property
+    def nearx_token_contract_id(self):
+        return self._nearx_token_contract_id
+
+    @property
+    def linear_token_contract_id(self):
+        return self._linear_token_contract_id
+
+    @property
+    def stnear_token_contract_id(self):
+        return self._stnear_token_contract_id
