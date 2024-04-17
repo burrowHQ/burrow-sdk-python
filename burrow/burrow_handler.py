@@ -335,7 +335,11 @@ def burrow(token_id, amount):
         burrow_handler = BurrowHandler(signer, token_id)
         extra_decimals = handle_extra_decimals()
         max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
-        ret = burrow_handler.burrow(max_amount)
+        burrow_contract_config = get_config()["data"]
+        if "enable_pyth_oracle" in burrow_contract_config and burrow_contract_config["enable_pyth_oracle"] is True:
+            ret = burrow_handler.burrow_pyth(max_amount)
+        else:
+            ret = burrow_handler.burrow(max_amount)
     return success(ret)
 
 
@@ -438,8 +442,13 @@ def decrease_collateral(token_id, amount):
     else:
         extra_decimals = handle_extra_decimals()
         max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
-        burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
-        ret = burrow_handler.decrease_collateral(token_id, max_amount)
+        burrow_contract_config = get_config()["data"]
+        if "enable_pyth_oracle" in burrow_contract_config and burrow_contract_config["enable_pyth_oracle"] is True:
+            burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+            ret = burrow_handler.decrease_collateral_pyth(token_id, max_amount)
+        else:
+            burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
+            ret = burrow_handler.decrease_collateral(token_id, max_amount)
     return success(ret)
 
 
