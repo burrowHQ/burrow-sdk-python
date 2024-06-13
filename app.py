@@ -15,6 +15,7 @@ import logging
 from burrow.tool_util import error, is_number
 from burrow.circulating_supply import update_marketcap, get_circulating_supply
 from loguru import logger
+from burrow.rewards import get_rewards_data
 
 
 service_version = "20240221.01"
@@ -641,6 +642,18 @@ def handle_get_shadow_records():
         return error("The required field is empty", "1002")
     try:
         return get_shadow_records(contract_id, account_id)
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/get_rewards', methods=['GET'])
+def handle_get_rewards():
+    try:
+        import asyncio
+        from flask import jsonify
+        ret = asyncio.run(get_rewards_data())
+        return jsonify(ret)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")

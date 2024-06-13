@@ -557,3 +557,13 @@ class BurrowHandler:
                 "price_identifier": price_identifier
             }
         )['result']
+
+    def ft_contract_call(self, method, args):
+        return self._signer.view_function(
+            self._contract_id,
+            method,
+            args
+        )['result']
+
+
+

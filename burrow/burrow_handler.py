@@ -1,3 +1,5 @@
+import sys
+sys.path.append('./burrow')
 import requests
 import json
 from contract_handler import BurrowHandler
@@ -1050,6 +1052,12 @@ def is_lp_token(token_id):
         return True
     else:
         return False
+
+
+def ft_contract_call(method, args, contract_name=global_config.burrow_contract):
+    burrow_handler = BurrowHandler(signer, contract_name)
+    assets_paged_list = burrow_handler.ft_contract_call(method, args)
+    return assets_paged_list
 
 
 if __name__ == "__main__":

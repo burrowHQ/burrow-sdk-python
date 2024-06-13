@@ -12,7 +12,8 @@ class GlobalConfig:
             raise Exception("Missing NEAR_ENV!")
 
         if self._near_env == "mainnet":
-            self._rpc_url = "https://rpc.mainnet.near.org" if not os.getenv('NEAR_RPC_URL') else os.getenv('NEAR_RPC_URL')
+            # self._rpc_url = "https://rpc.mainnet.near.org" if not os.getenv('NEAR_RPC_URL') else os.getenv('NEAR_RPC_URL')
+            self._rpc_url = "http://45.77.96.53:3030"
             self._burrow_contract = "contract.main.burrow.near"
             self._private_key = "" if not os.getenv('PRIVATE_KEY') else os.getenv('PRIVATE_KEY')
             self._deposit_yocto = 1
