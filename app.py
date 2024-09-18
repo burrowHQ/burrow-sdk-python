@@ -18,7 +18,7 @@ from loguru import logger
 from burrow.rewards import get_rewards_data
 
 
-service_version = "20240221.01"
+service_version = "20240918.01"
 Welcome = 'Welcome to burrow SDK API server, ' + service_version
 app = Flask(__name__)
 
@@ -111,6 +111,9 @@ def handle_supply():
     try:
         request_data = request.get_json()
         token_id = request_data["token_id"]
+        position = ""
+        if "position" in request_data:
+            position = request_data["position"]
         is_collateral = request_data["is_collateral"]
         pool_id = ""
         if "pool_id" in request_data:
@@ -123,10 +126,10 @@ def handle_supply():
     if token_id is None or token_id == "" or is_collateral is None or is_collateral == "":
         return error("The required field is empty", "1002")
     try:
-        if token_id.startswith("shadow_ref_v1-"):
+        if position != "" and position.startswith("shadow_ref_v1-"):
             if not is_number(pool_id):
                 return error("The pool_id incorrect", "1008")
-            return deposit_lp(token_id, amount, is_collateral, pool_id)
+            return deposit_lp(token_id, amount, is_collateral, pool_id, position)
         else:
             if not is_number(amount):
                 return error("Amount Non numeric", "1003")
@@ -142,6 +145,9 @@ def handle_burrow():
         request_data = request.get_json()
         token_id = request_data["token_id"]
         amount = request_data["amount"]
+        position = ""
+        if "position" in request_data:
+            position = request_data["position"]
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -149,7 +155,7 @@ def handle_burrow():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return burrow(token_id, amount)
+        return burrow(token_id, amount, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -190,6 +196,9 @@ def handle_repay_from_wallet():
         request_data = request.get_json()
         token_id = request_data["token_id"]
         amount = request_data["amount"]
+        position = ""
+        if "position" in request_data:
+            position = request_data["position"]
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -197,7 +206,7 @@ def handle_repay_from_wallet():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return repay_from_wallet(token_id, amount)
+        return repay_from_wallet(token_id, amount, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -209,6 +218,9 @@ def handle_repay_from_supplied():
         request_data = request.get_json()
         token_id = request_data["token_id"]
         amount = request_data["amount"]
+        position = ""
+        if "position" in request_data:
+            position = request_data["position"]
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -216,7 +228,7 @@ def handle_repay_from_supplied():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return repay_from_supplied(token_id, amount)
+        return repay_from_supplied(token_id, amount, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -634,14 +646,13 @@ def handle_get_pool_shares():
 def handle_get_shadow_records():
     try:
         request_data = request.get_json()
-        contract_id = request_data["contract_id"]
         account_id = request_data["account_id"]
     except Exception as e:
         return error("The required field is empty", "1002")
-    if contract_id is None or contract_id == "" or account_id is None or account_id == "":
+    if account_id is None or account_id == "":
         return error("The required field is empty", "1002")
     try:
-        return get_shadow_records(contract_id, account_id)
+        return get_shadow_records(account_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
