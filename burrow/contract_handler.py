@@ -1,9 +1,6 @@
 import json
-from cachetools import TTLCache
 from config import GlobalConfig
-
 global_config = GlobalConfig()
-cache = TTLCache(maxsize=100, ttl=600)
 
 
 class BurrowHandler:
@@ -12,93 +9,58 @@ class BurrowHandler:
         self._contract_id = contract_id
 
     def storage_balance_of(self, account_id: str):
-        cache_key = 'storage_balance_of' + self._contract_id + account_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "storage_balance_of",
-                {
-                    "account_id": account_id,
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "storage_balance_of",
+            {
+                "account_id": account_id,
+            }
+        )['result']
 
     def get_assets_paged_detailed(self):
-        cache_key = 'get_assets_paged_detailed' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_assets_paged_detailed",
-                {
-                    "from_index": 0,
-                    "limit": 100
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_assets_paged_detailed",
+            {
+                "from_index": 0,
+                "limit": 100
+            }
+        )['result']
 
     def get_asset_farms_paged(self):
-        cache_key = 'get_asset_farms_paged' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_asset_farms_paged",
-                {
-                    "from_index": 0,
-                    "limit": 100
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_asset_farms_paged",
+            {
+                "from_index": 0,
+                "limit": 100
+            }
+        )['result']
 
     def get_account(self, account_id: str):
-        cache_key = 'get_account' + self._contract_id + account_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                "get_account",
-                {
-                    "account_id": account_id
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_account",
+            {
+                "account_id": account_id
+            }
+        )['result']
 
     def get_price_data(self):
-        cache_key = 'get_price_data' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_price_data",
-                {
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_price_data",
+            {
+            }
+        )['result']
 
     def ft_metadata(self):
-        cache_key = 'ft_metadata' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "ft_metadata",
-                {
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "ft_metadata",
+            {
+            }
+        )['result']
 
     def deposit(self, amount: str):
         return {
@@ -423,34 +385,22 @@ class BurrowHandler:
         }
 
     def get_assets(self):
-        cache_key = 'get_assets' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_asset",
-                {
-                    "asset_id": "usdt.tether-token.near"
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_asset",
+            {
+                "asset_id": "usdt.tether-token.near"
+            }
+        )['result']
 
     def ft_balance_of(self, account_id):
-        cache_key = 'ft_balance_of' + self._contract_id + account_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "ft_balance_of",
-                {
-                    "account_id": account_id
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "ft_balance_of",
+            {
+                "account_id": account_id
+            }
+        )['result']
 
     def account_stake_booster(self, amount: str, duration: int):
         return {
@@ -480,79 +430,49 @@ class BurrowHandler:
         }
 
     def get_account_all_positions(self, account_id: str):
-        cache_key = 'get_account' + self._contract_id + account_id
-        cache_value = cache.get('get_account_all_positions', None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_account_all_positions",
-                {
-                    "account_id": account_id
-                }
-            )['result']
-            cache_value = ret
-            cache['get_account_all_positions'] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_account_all_positions",
+            {
+                "account_id": account_id
+            }
+        )['result']
 
     def get_config(self):
-        cache_key = 'get_config' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_config",
-                {
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_config",
+            {
+            }
+        )['result']
 
     def get_unit_lpt_assets(self, pool_ids: list):
-        cache_key = 'get_unit_lpt_assets' + self._contract_id + str(pool_ids)
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_unit_lpt_assets",
-                {
-                    "pool_ids": pool_ids
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_unit_lpt_assets",
+            {
+                "pool_ids": pool_ids
+            }
+        )['result']
 
     def get_pool_shares(self, account_id: str, pool_id: int):
-        cache_key = 'get_pool_shares' + self._contract_id + account_id + pool_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_pool_shares",
-                {
-                    "account_id": account_id,
-                    "pool_id": pool_id
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_pool_shares",
+            {
+                "account_id": account_id,
+                "pool_id": pool_id
+            }
+        )['result']
 
     def get_shadow_records(self, account_id: str):
-        cache_key = 'get_shadow_records' + self._contract_id + account_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_shadow_records",
-                {
-                    "account_id": account_id
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_shadow_records",
+            {
+                "account_id": account_id
+            }
+        )['result']
 
     def shadow_action(self, amount: str, pool_id: int):
         ret = {
@@ -569,30 +489,31 @@ class BurrowHandler:
             ret["args"]["amount"] = amount
         return ret
 
-    def shadow_action_collateral(self, token_id: str, position: str, amount: str):
+    def shadow_action_collateral(self, token_id: str, amount: str, pool_id: int):
         msg = {
             "Execute": {
                 "actions": [{
                     "PositionIncreaseCollateral": {
-                        "position": position,
+                        "position": token_id,
                         "asset_amount": {
-                            "amount": amount,
-                            "token_id": position
+                            "token_id": token_id
                         }
                     }
                 }]
             }
         }
-        return {
+        ret = {
             "contract_id": self._contract_id,
             "method_name": "shadow_action",
             "args": {
-                "receiver_id": self._contract_id,
+                "action": "ToBurrowland",
+                "pool_id": pool_id,
                 "amount": amount,
-                "msg": json.dumps(msg)
+                "msg": msg
             },
             "amount": global_config.deposit_yocto
         }
+        return ret
 
     def withdraw_lp(self, amount: str, pool_id: int):
         ret = {
@@ -610,94 +531,52 @@ class BurrowHandler:
         return ret
 
     def get_all_token_pyth_infos(self):
-        cache_key = 'get_all_token_pyth_infos' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_all_token_pyth_infos",
-                {
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_all_token_pyth_infos",
+            {
+            }
+        )['result']
 
     def get_nearx_price(self):
-        cache_key = 'get_nearx_price' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_nearx_price",
-                {
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_nearx_price",
+            {
+            }
+        )['result']
 
     def ft_price(self):
-        cache_key = 'ft_price' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "ft_price",
-                {
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "ft_price",
+            {
+            }
+        )['result']
 
     def get_st_near_price(self):
-        cache_key = 'get_st_near_price' + self._contract_id
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_st_near_price",
-                {
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_st_near_price",
+            {
+            }
+        )['result']
 
     def get_price(self, price_identifier):
-        cache_key = 'get_price' + self._contract_id + price_identifier
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                "get_price",
-                {
-                    "price_identifier": price_identifier
-                }
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            "get_price",
+            {
+                "price_identifier": price_identifier
+            }
+        )['result']
 
     def ft_contract_call(self, method, args):
-        cache_key = 'ft_contract_call' + self._contract_id + method + str(args)
-        cache_value = cache.get(cache_key, None)
-        if cache_value is None:
-            ret = self._signer.view_function(
-                self._contract_id,
-                method,
-                args
-            )['result']
-            cache_value = ret
-            cache[cache_key] = ret
-        return cache_value
+        return self._signer.view_function(
+            self._contract_id,
+            method,
+            args
+        )['result']
 
 
-if __name__ == '__main__':
-    value = cache.get('key1', None)
-    if value is None:
-        print('缓存项已过期或不存在')
-        cache['key1'] = 'value1'
-    else:
-        print('缓存项仍然有效:', value)
+

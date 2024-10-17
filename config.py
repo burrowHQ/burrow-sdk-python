@@ -21,19 +21,20 @@ class GlobalConfig:
             self._near_contract = "wrap.near"
             self._signer_account_id = "juaner.near" if not os.getenv('SIGNER_ACCOUNT_ID') else os.getenv('SIGNER_ACCOUNT_ID')
             self._burrow_token = "token.burrow.near"
+            self._ref_ex = "v2.ref-finance.near"
             self._pyth_oracle_contract_id = "pyth-oracle.near"
             self._nearx_token_contract_id = "v2-nearx.stader-labs.near"
             self._linear_token_contract_id = "linear-protocol.near"
             self._stnear_token_contract_id = "meta-pool.near"
         elif self._near_env == "testnet":
             self._rpc_url = "https://rpc.testnet.near.org" if not os.getenv('NEAR_RPC_URL') else os.getenv('NEAR_RPC_URL')
-            self._burrow_contract = "contract.1689937928.burrow.testnet"
+            self._burrow_contract = "contract.dev-burrow.testnet"
             self._private_key = "" if not os.getenv('PRIVATE_KEY') else os.getenv('PRIVATE_KEY')
             self._deposit_yocto = 1
             self._priceoracle_contract = "mock-priceoracle.testnet"
             self._near_contract = "wrap.testnet"
             self._signer_account_id = "juaner.testnet" if not os.getenv('SIGNER_ACCOUNT_ID') else os.getenv('SIGNER_ACCOUNT_ID')
-            self._burrow_token = "token.1689937928.burrow.testnet"
+            self._burrow_token = "token.dev-burrow.testnet"
             self._ref_ex = "exchange.ref-dev.testnet"
             self._pyth_oracle_contract_id = "pyth-oracle.testnet"
             self._nearx_token_contract_id = "v2-nearx.staderlabs.testnet"
