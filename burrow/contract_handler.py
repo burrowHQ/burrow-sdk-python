@@ -139,20 +139,25 @@ class BurrowHandler:
         return {
             "contract_id": global_config.burrow_contract,
             "method_name": "execute_with_pyth",
-            "actions": json.dumps(msg),
+            "args": json.dumps(msg),
             "amount": global_config.deposit_yocto
         }
 
-    def burrow_lp(self, amount: str, token_id: str):
+    def burrow_lp(self, amount: str, token_id: str, position: str):
         msg = {
             "Execute": {
                 "actions": [{
                     "PositionBorrow": {
                         "asset_amount": {
-                            "token_id": "ref.fakes.testnet",
+                            "token_id": token_id,
                             "amount": amount
                         },
-                        "position": token_id
+                        "position": position,
+                    },
+                }, {
+                    "Withdraw": {
+                        "token_id": token_id,
+                        "max_amount": amount
                     }
                 }]
             }
@@ -164,6 +169,32 @@ class BurrowHandler:
                 "receiver_id": self._contract_id,
                 "msg": json.dumps(msg)
             },
+            "amount": global_config.deposit_yocto
+        }
+
+    def burrow_pyth_lp(self, amount: str, token_id: str, position: str):
+        msg = {
+            "Execute": {
+                "actions": [{
+                    "PositionBorrow": {
+                        "asset_amount": {
+                            "token_id": token_id,
+                            "amount": amount
+                        },
+                        "position": position,
+                    },
+                }, {
+                    "Withdraw": {
+                        "token_id": token_id,
+                        "max_amount": amount
+                    }
+                }]
+            }
+        }
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "execute_with_pyth",
+            "args": json.dumps(msg),
             "amount": global_config.deposit_yocto
         }
 
@@ -216,20 +247,27 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
-    def repay_from_wallet_lp(self, amount: str, token_id: str):
-        return {
-            "contract_id": self._contract_id,
-            "method_name": "execute",
-            "args": {
+    def repay_from_wallet_lp(self, amount: str, token_id: str, position: str, max_amount: str):
+        msg = {
+            "Execute": {
                 "actions": [{
                     "PositionRepay": {
-                        "position": token_id,
+                        "position": position,
                         "asset_amount": {
-                            "token_id": "ref.fakes.testnet",
-                            "amount": amount
+                            "amount": max_amount,
+                            "token_id": token_id
                         }
                     }
                 }]
+            }
+        }
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "ft_transfer_call",
+            "args": {
+                "receiver_id": self._contract_id,
+                "amount": amount,
+                "msg": json.dumps(msg)
             },
             "amount": global_config.deposit_yocto
         }
@@ -251,16 +289,16 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
-    def repay_from_supplied_lp(self, amount: str, token_id: str):
+    def repay_from_supplied_lp(self, amount: str, token_id: str, position: str):
         return {
             "contract_id": self._contract_id,
             "method_name": "execute",
             "args": {
                 "actions": [{
                     "PositionRepay": {
-                        "position": token_id,
+                        "position": position,
                         "asset_amount": {
-                            "token_id": "ref.fakes.testnet",
+                            "token_id": token_id,
                             "amount": amount
                         }
                     }
@@ -312,7 +350,7 @@ class BurrowHandler:
         return {
             "contract_id": self._contract_id,
             "method_name": "execute_with_pyth",
-            "actions": json.dumps(msg),
+            "args": json.dumps(msg),
             "amount": global_config.deposit_yocto
         }
 
@@ -337,6 +375,25 @@ class BurrowHandler:
                 "receiver_id": global_config.burrow_contract,
                 "msg": json.dumps(msg)
             },
+            "amount": global_config.deposit_yocto
+        }
+
+    def decrease_collateral_pyth_lp(self, token_id: str, amount: str):
+        msg = {
+                "actions": [{
+                    "PositionDecreaseCollateral": {
+                        "position": token_id,
+                        "asset_amount": {
+                            "token_id": token_id,
+                            "amount": amount
+                        }
+                    }
+                }]
+            }
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "execute_with_pyth",
+            "args": json.dumps(msg),
             "amount": global_config.deposit_yocto
         }
 
@@ -478,7 +535,7 @@ class BurrowHandler:
             ret["args"]["amount"] = amount
         return ret
 
-    def shadow_action_collateral(self, token_id: str, pool_id: int):
+    def shadow_action_collateral(self, token_id: str, amount: str, pool_id: int):
         msg = {
             "Execute": {
                 "actions": [{
@@ -491,16 +548,18 @@ class BurrowHandler:
                 }]
             }
         }
-        return {
+        ret = {
             "contract_id": self._contract_id,
-            "method_name": "ft_transfer_call",
+            "method_name": "shadow_action",
             "args": {
                 "action": "ToBurrowland",
                 "pool_id": pool_id,
-                "msg": json.dumps(msg)
+                "amount": amount,
+                "msg": msg
             },
             "amount": global_config.deposit_yocto
         }
+        return ret
 
     def withdraw_lp(self, amount: str, pool_id: int):
         ret = {
@@ -557,3 +616,13 @@ class BurrowHandler:
                 "price_identifier": price_identifier
             }
         )['result']
+
+    def ft_contract_call(self, method, args):
+        return self._signer.view_function(
+            self._contract_id,
+            method,
+            args
+        )['result']
+
+
+
