@@ -139,7 +139,7 @@ class BurrowHandler:
         return {
             "contract_id": global_config.burrow_contract,
             "method_name": "execute_with_pyth",
-            "actions": json.dumps(msg),
+            "args": json.dumps(msg),
             "amount": global_config.deposit_yocto
         }
 
@@ -154,6 +154,7 @@ class BurrowHandler:
                         },
                         "position": position,
                     },
+                }, {
                     "Withdraw": {
                         "token_id": token_id,
                         "max_amount": amount
@@ -168,6 +169,32 @@ class BurrowHandler:
                 "receiver_id": self._contract_id,
                 "msg": json.dumps(msg)
             },
+            "amount": global_config.deposit_yocto
+        }
+
+    def burrow_pyth_lp(self, amount: str, token_id: str, position: str):
+        msg = {
+            "Execute": {
+                "actions": [{
+                    "PositionBorrow": {
+                        "asset_amount": {
+                            "token_id": token_id,
+                            "amount": amount
+                        },
+                        "position": position,
+                    },
+                }, {
+                    "Withdraw": {
+                        "token_id": token_id,
+                        "max_amount": amount
+                    }
+                }]
+            }
+        }
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "execute_with_pyth",
+            "args": json.dumps(msg),
             "amount": global_config.deposit_yocto
         }
 
@@ -323,7 +350,7 @@ class BurrowHandler:
         return {
             "contract_id": self._contract_id,
             "method_name": "execute_with_pyth",
-            "actions": json.dumps(msg),
+            "args": json.dumps(msg),
             "amount": global_config.deposit_yocto
         }
 
@@ -348,6 +375,25 @@ class BurrowHandler:
                 "receiver_id": global_config.burrow_contract,
                 "msg": json.dumps(msg)
             },
+            "amount": global_config.deposit_yocto
+        }
+
+    def decrease_collateral_pyth_lp(self, token_id: str, amount: str):
+        msg = {
+                "actions": [{
+                    "PositionDecreaseCollateral": {
+                        "position": token_id,
+                        "asset_amount": {
+                            "token_id": token_id,
+                            "amount": amount
+                        }
+                    }
+                }]
+            }
+        return {
+            "contract_id": self._contract_id,
+            "method_name": "execute_with_pyth",
+            "args": json.dumps(msg),
             "amount": global_config.deposit_yocto
         }
 

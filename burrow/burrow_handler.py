@@ -368,7 +368,11 @@ def burrow(token_id, amount, position):
     if not check_borrowed:
         return error("The token not burrow", "1004")
     if position != "" and is_lp_token(position):
-        ret = burrow_handler.burrow_lp(amount, token_id, position)
+        burrow_contract_config = get_config()["data"]
+        if "enable_pyth_oracle" in burrow_contract_config and burrow_contract_config["enable_pyth_oracle"] is True:
+            ret = burrow_handler.burrow_pyth_lp(amount, token_id, position)
+        else:
+            ret = burrow_handler.burrow_lp(amount, token_id, position)
     else:
         burrow_handler = BurrowHandler(signer, token_id)
         extra_decimals = handle_extra_decimals()
@@ -467,7 +471,7 @@ def increase_collateral(token_id, amount):
     return success(ret)
 
 
-def decrease_collateral(token_id, amount):
+def decrease_collateral(token_id, amount, position):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_collateral = True
@@ -476,13 +480,17 @@ def decrease_collateral(token_id, amount):
             check_collateral = assets_paged_detailed["config"]["can_use_as_collateral"]
     if not check_collateral:
         return error("The token not collateral", "1006")
-    if is_lp_token(token_id):
-        burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
-        ret = burrow_handler.decrease_collateral_lp(token_id, amount)
+    burrow_contract_config = get_config()["data"]
+    if is_lp_token(position):
+        if "enable_pyth_oracle" in burrow_contract_config and burrow_contract_config["enable_pyth_oracle"] is True:
+            burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
+            ret = burrow_handler.decrease_collateral_pyth_lp(position, amount)
+        else:
+            burrow_handler = BurrowHandler(signer, global_config.priceoracle_contract)
+            ret = burrow_handler.decrease_collateral_lp(position, amount)
     else:
         extra_decimals = handle_extra_decimals()
         max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
-        burrow_contract_config = get_config()["data"]
         if "enable_pyth_oracle" in burrow_contract_config and burrow_contract_config["enable_pyth_oracle"] is True:
             burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
             ret = burrow_handler.decrease_collateral_pyth(token_id, max_amount)
@@ -1371,7 +1379,7 @@ if __name__ == "__main__":
     # r = max_withdraw_balance("juaner.testnet", "shadow_ref_v1-711", False)
     # print(r)
 
-    r = max_repay_from_wallet("juaner1.testnet", "linear-protocol.testnet", "shadow_ref_v1-711")
+    # r = max_repay_from_wallet("juaner1.testnet", "linear-protocol.testnet", "shadow_ref_v1-711")
 
     # r = repay_from_wallet("juaner1.testnet", "usdc.fakes.testnet")
     # print(r)
@@ -1414,3 +1422,6 @@ if __name__ == "__main__":
 
     # aa = burrow_health_factor("usdc.fakes.testnet", "juaner.testnet", "1000000000000000000000000", True, "shadow_ref_v1-711")
     # print(aa)
+
+    aa = decrease_collateral("dai.fakes.testnet", "1000000000000000000000000", "shadow_ref_v1-711")
+    print(aa)

@@ -18,7 +18,7 @@ from loguru import logger
 from burrow.rewards import get_rewards_data
 
 
-service_version = "20240918.01"
+service_version = "20241018.01"
 Welcome = 'Welcome to burrow SDK API server, ' + service_version
 app = Flask(__name__)
 
@@ -276,6 +276,10 @@ def handle_decrease_collateral():
         request_data = request.get_json()
         token_id = request_data["token_id"]
         amount = request_data["amount"]
+        if "position" in request_data:
+            position = request_data["position"]
+        else:
+            position = token_id
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -283,7 +287,7 @@ def handle_decrease_collateral():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return decrease_collateral(token_id, amount)
+        return decrease_collateral(token_id, amount, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
