@@ -98,7 +98,6 @@ class BurrowHandler:
 
     def burrow(self, amount: str):
         msg = {
-            "Execute": {
                 "actions": [{
                     "Borrow": {
                         "token_id": self._contract_id,
@@ -111,7 +110,6 @@ class BurrowHandler:
                     }
                 }]
             }
-        }
         return {
             "contract_id": global_config.priceoracle_contract,
             "method_name": "oracle_call",
@@ -145,7 +143,6 @@ class BurrowHandler:
 
     def burrow_lp(self, amount: str, token_id: str, position: str):
         msg = {
-            "Execute": {
                 "actions": [{
                     "PositionBorrow": {
                         "asset_amount": {
@@ -161,7 +158,6 @@ class BurrowHandler:
                     }
                 }]
             }
-        }
         return {
             "contract_id": global_config.priceoracle_contract,
             "method_name": "oracle_call",
@@ -174,7 +170,6 @@ class BurrowHandler:
 
     def burrow_pyth_lp(self, amount: str, token_id: str, position: str):
         msg = {
-            "Execute": {
                 "actions": [{
                     "PositionBorrow": {
                         "asset_amount": {
@@ -190,7 +185,6 @@ class BurrowHandler:
                     }
                 }]
             }
-        }
         return {
             "contract_id": self._contract_id,
             "method_name": "execute_with_pyth",
