@@ -143,6 +143,7 @@ class BurrowHandler:
 
     def burrow_lp(self, amount: str, token_id: str, position: str):
         msg = {
+            "Execute": {
                 "actions": [{
                     "PositionBorrow": {
                         "asset_amount": {
@@ -158,6 +159,7 @@ class BurrowHandler:
                     }
                 }]
             }
+        }
         return {
             "contract_id": global_config.priceoracle_contract,
             "method_name": "oracle_call",
@@ -549,7 +551,7 @@ class BurrowHandler:
                 "action": "ToBurrowland",
                 "pool_id": pool_id,
                 "amount": amount,
-                "msg": msg
+                "msg": json.dumps(msg)
             },
             "amount": global_config.deposit_yocto
         }
@@ -617,6 +619,3 @@ class BurrowHandler:
             method,
             args
         )['result']
-
-
-
