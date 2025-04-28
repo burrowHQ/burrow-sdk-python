@@ -10,6 +10,16 @@ def success(data=None):
     return ret
 
 
+def new_success(data=None, collateral_data=0):
+    ret = {
+        "code": "0",
+        "msg": "success",
+        "data": data,
+        "collateral_data": collateral_data
+    }
+    return ret
+
+
 def error(msg, code=None, data=None):
     ret = {
         "code": code,

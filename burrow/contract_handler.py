@@ -244,8 +244,8 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
-    def withdraw(self, amount: str):
-        return {
+    def withdraw(self, amount: str, decrease_amount: int):
+        ret_data = {
             "contract_id": global_config.burrow_contract,
             "method_name": "execute",
             "args": {
@@ -260,6 +260,29 @@ class BurrowHandler:
             },
             "amount": global_config.deposit_yocto
         }
+        if decrease_amount > 0:
+            ret_data = {
+                "contract_id": global_config.burrow_contract,
+                "method_name": "execute",
+                "args": {
+                    "actions": [
+                        {
+                            "DecreaseCollateral": {
+                                "token_id": self._contract_id,
+                                "amount": str(decrease_amount)
+                            }
+                        },
+                        {
+                            "Withdraw": {
+                                "token_id": self._contract_id,
+                                "max_amount": amount
+                            }
+                        }
+                    ]
+                },
+                "amount": global_config.deposit_yocto
+            }
+        return ret_data
 
     def repay_from_wallet(self, amount: str, max_amount: str):
         msg = {
@@ -308,8 +331,8 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
-    def repay_from_supplied(self, amount: str, token_id: str):
-        return {
+    def repay_from_supplied(self, amount: str, token_id: str, decrease_amount: int):
+        ret_data = {
             "contract_id": self._contract_id,
             "method_name": "execute",
             "args": {
@@ -324,6 +347,29 @@ class BurrowHandler:
             },
             "amount": global_config.deposit_yocto
         }
+        if decrease_amount > 0:
+            ret_data = {
+                "contract_id": self._contract_id,
+                "method_name": "execute_with_pyth",
+                "args": {
+                    "actions": [
+                        {
+                            "DecreaseCollateral": {
+                                "token_id": token_id,
+                                "amount": str(decrease_amount)
+                            }
+                        },
+                        {
+                            "Repay": {
+                                "token_id": token_id,
+                                "max_amount": amount
+                            }
+                        }
+                    ]
+                },
+                "amount": global_config.deposit_yocto
+            }
+        return ret_data
 
     def repay_from_supplied_lp(self, amount: str, token_id: str, position: str):
         return {

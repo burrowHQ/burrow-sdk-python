@@ -5,7 +5,7 @@ import json
 from contract_handler import BurrowHandler
 import globals
 from config import GlobalConfig
-from tool_util import success, error
+from tool_util import success, error, new_success
 
 global_config = GlobalConfig()
 signer = globals.get_signer_account(global_config.signer_account_id)
@@ -385,7 +385,7 @@ def burrow(token_id, amount, position):
     return success(ret)
 
 
-def withdraw(token_id, amount):
+def withdraw(token_id, amount, account_id):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_withdraw = True
@@ -396,8 +396,19 @@ def withdraw(token_id, amount):
         return error("The token not withdraw", "1007")
     extra_decimals = handle_extra_decimals()
     max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
+    supplied_amount = 0
+    decrease_amount = 0
+    if account_id != "":
+        account_data = burrow_handler.get_account(account_id)
+        if account_data is not None:
+            supplied_data_list = account_data["supplied"]
+            for supplied_data in supplied_data_list:
+                if supplied_data["token_id"] == token_id:
+                    supplied_amount += int(supplied_data["balance"])
+        if int(max_amount) > supplied_amount:
+            decrease_amount = int(max_amount) - supplied_amount
     burrow_handler = BurrowHandler(signer, token_id)
-    ret = burrow_handler.withdraw(max_amount)
+    ret = burrow_handler.withdraw(max_amount, decrease_amount)
     return success(ret)
 
 
@@ -429,14 +440,25 @@ def repay_from_wallet(token_id, amount, position):
     return success(ret)
 
 
-def repay_from_supplied(token_id, amount, position):
+def repay_from_supplied(token_id, amount, position, account_id):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     if position != "" and is_lp_token(position):
         ret = burrow_handler.repay_from_supplied_lp(amount, token_id, position)
     else:
         extra_decimals = handle_extra_decimals()
         max_amount = str(int(amount) * multiply_decimals(extra_decimals[token_id]))
-        ret = burrow_handler.repay_from_supplied(max_amount, token_id)
+        supplied_amount = 0
+        decrease_amount = 0
+        if account_id != "":
+            account_data = burrow_handler.get_account(account_id)
+            if account_data is not None:
+                supplied_data_list = account_data["supplied"]
+                for supplied_data in supplied_data_list:
+                    if supplied_data["token_id"] == token_id:
+                        supplied_amount += int(supplied_data["balance"])
+            if int(max_amount) > supplied_amount:
+                decrease_amount = int(max_amount) - supplied_amount
+        ret = burrow_handler.repay_from_supplied(max_amount, token_id, decrease_amount)
     return success(ret)
 
 
@@ -956,7 +978,7 @@ def max_adjust_balance(account_id, token):
                 decimals = token_price_data[collateral_data["token_id"]]["decimals"] + extra_decimals[collateral_data["token_id"]]
             total_collateral_amount += int(collateral_data["balance"]) / multiply_decimals(decimals)
     ret = total_collateral_amount + total_supplied_amount
-    return success(ret)
+    return new_success(ret, total_collateral_amount)
 
 
 def max_repay_from_wallet(account_id, token, position):
