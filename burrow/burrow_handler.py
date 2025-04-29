@@ -408,7 +408,13 @@ def withdraw(token_id, amount, account_id):
         if int(max_amount) > supplied_amount:
             decrease_amount = int(max_amount) - supplied_amount
     burrow_handler = BurrowHandler(signer, token_id)
-    ret = burrow_handler.withdraw(max_amount, decrease_amount)
+    method_name = "execute"
+    if decrease_amount > 0:
+        method_name = "oracle_call"
+        burrow_contract_config = get_config()["data"]
+        if "enable_pyth_oracle" in burrow_contract_config and burrow_contract_config["enable_pyth_oracle"] is True:
+            method_name = "execute_with_pyth"
+    ret = burrow_handler.withdraw(max_amount, decrease_amount, method_name)
     return success(ret)
 
 
@@ -458,7 +464,13 @@ def repay_from_supplied(token_id, amount, position, account_id):
                         supplied_amount += int(supplied_data["balance"])
             if int(max_amount) > supplied_amount:
                 decrease_amount = int(max_amount) - supplied_amount
-        ret = burrow_handler.repay_from_supplied(max_amount, token_id, decrease_amount)
+        method_name = "execute"
+        if decrease_amount > 0:
+            method_name = "oracle_call"
+            burrow_contract_config = get_config()["data"]
+            if "enable_pyth_oracle" in burrow_contract_config and burrow_contract_config["enable_pyth_oracle"] is True:
+                method_name = "execute_with_pyth"
+        ret = burrow_handler.repay_from_supplied(max_amount, token_id, decrease_amount, method_name)
     return success(ret)
 
 

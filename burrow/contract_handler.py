@@ -6,6 +6,7 @@ import copy
 global_config = GlobalConfig()
 cache = TTLCache(maxsize=10000, ttl=600)
 
+
 class BurrowHandler:
     def __init__(self, signer, contract_id):
         self._signer = signer
@@ -244,10 +245,10 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
-    def withdraw(self, amount: str, decrease_amount: int):
+    def withdraw(self, amount: str, decrease_amount: int, method_name: str):
         ret_data = {
             "contract_id": global_config.burrow_contract,
-            "method_name": "execute",
+            "method_name": method_name,
             "args": {
                 "actions": [
                     {
@@ -263,7 +264,7 @@ class BurrowHandler:
         if decrease_amount > 0:
             ret_data = {
                 "contract_id": global_config.burrow_contract,
-                "method_name": "execute",
+                "method_name": method_name,
                 "args": {
                     "actions": [
                         {
@@ -331,10 +332,10 @@ class BurrowHandler:
             "amount": global_config.deposit_yocto
         }
 
-    def repay_from_supplied(self, amount: str, token_id: str, decrease_amount: int):
+    def repay_from_supplied(self, amount: str, token_id: str, decrease_amount: int, method_name: str):
         ret_data = {
             "contract_id": self._contract_id,
-            "method_name": "execute",
+            "method_name": method_name,
             "args": {
                 "actions": [
                     {
@@ -350,7 +351,7 @@ class BurrowHandler:
         if decrease_amount > 0:
             ret_data = {
                 "contract_id": self._contract_id,
-                "method_name": "execute_with_pyth",
+                "method_name": method_name,
                 "args": {
                     "actions": [
                         {
