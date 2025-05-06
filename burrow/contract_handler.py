@@ -4,7 +4,7 @@ from cachetools import TTLCache
 import copy
 
 global_config = GlobalConfig()
-cache = TTLCache(maxsize=10000, ttl=600)
+cache = TTLCache(maxsize=10000, ttl=300)
 
 
 class BurrowHandler:
