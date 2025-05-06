@@ -5,6 +5,7 @@ import copy
 
 global_config = GlobalConfig()
 cache = TTLCache(maxsize=10000, ttl=300)
+cache_10s = TTLCache(maxsize=10000, ttl=10)
 
 
 class BurrowHandler:
@@ -61,7 +62,7 @@ class BurrowHandler:
 
     def get_account(self, account_id: str):
         cache_key = 'get_account' + self._contract_id + account_id
-        cache_value = cache.get(cache_key, None)
+        cache_value = cache_10s.get(cache_key, None)
         if cache_value is None:
             ret = self._signer.view_function(
                 self._contract_id,
@@ -71,7 +72,7 @@ class BurrowHandler:
                 }
             )['result']
             cache_value = ret
-            cache[cache_key] = ret
+            cache_10s[cache_key] = ret
         new_cache_value = copy.deepcopy(cache_value)
         return new_cache_value
 
@@ -530,7 +531,7 @@ class BurrowHandler:
 
     def ft_balance_of(self, account_id):
         cache_key = 'ft_balance_of' + self._contract_id + account_id
-        cache_value = cache.get(cache_key, None)
+        cache_value = cache_10s.get(cache_key, None)
         if cache_value is None:
             ret = self._signer.view_function(
                 self._contract_id,
@@ -540,7 +541,7 @@ class BurrowHandler:
                 }
             )['result']
             cache_value = ret
-            cache[cache_key] = ret
+            cache_10s[cache_key] = ret
         return cache_value
 
     def account_stake_booster(self, amount: str, duration: int):
@@ -572,7 +573,7 @@ class BurrowHandler:
 
     def get_account_all_positions(self, account_id: str):
         cache_key = 'get_account_all_positions' + self._contract_id + account_id
-        cache_value = cache.get(cache_key, None)
+        cache_value = cache_10s.get(cache_key, None)
         if cache_value is None:
             ret = self._signer.view_function(
                 self._contract_id,
@@ -582,7 +583,7 @@ class BurrowHandler:
                 }
             )['result']
             cache_value = ret
-            cache[cache_key] = ret
+            cache_10s[cache_key] = ret
         new_cache_value = copy.deepcopy(cache_value)
         return new_cache_value
 
