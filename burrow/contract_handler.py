@@ -334,33 +334,27 @@ class BurrowHandler:
         }
 
     def repay_from_supplied(self, amount: str, token_id: str, decrease_amount: int, method_name: str):
-        ret_data = {
-            "contract_id": self._contract_id,
-            "method_name": method_name,
-            "args": {
-                "actions": [
-                    {
-                        "Repay": {
-                            "token_id": token_id,
-                            "max_amount": amount
-                        }
-                    }
-                ]
-            },
-            "amount": global_config.deposit_yocto
-        }
-        if decrease_amount > 0:
+        if amount == "0":
             ret_data = {
                 "contract_id": self._contract_id,
                 "method_name": method_name,
                 "args": {
                     "actions": [
                         {
-                            "DecreaseCollateral": {
+                            "Repay": {
                                 "token_id": token_id,
-                                "amount": str(decrease_amount)
                             }
-                        },
+                        }
+                    ]
+                },
+                "amount": global_config.deposit_yocto
+            }
+        else:
+            ret_data = {
+                "contract_id": self._contract_id,
+                "method_name": method_name,
+                "args": {
+                    "actions": [
                         {
                             "Repay": {
                                 "token_id": token_id,
@@ -371,25 +365,87 @@ class BurrowHandler:
                 },
                 "amount": global_config.deposit_yocto
             }
+        if decrease_amount > 0:
+            if amount == "0":
+                ret_data = {
+                    "contract_id": self._contract_id,
+                    "method_name": method_name,
+                    "args": {
+                        "actions": [
+                            {
+                                "DecreaseCollateral": {
+                                    "token_id": token_id,
+                                    "amount": str(decrease_amount)
+                                }
+                            },
+                            {
+                                "Repay": {
+                                    "token_id": token_id,
+                                }
+                            }
+                        ]
+                    },
+                    "amount": global_config.deposit_yocto
+                }
+            else:
+                ret_data = {
+                    "contract_id": self._contract_id,
+                    "method_name": method_name,
+                    "args": {
+                        "actions": [
+                            {
+                                "DecreaseCollateral": {
+                                    "token_id": token_id,
+                                    "amount": str(decrease_amount)
+                                }
+                            },
+                            {
+                                "Repay": {
+                                    "token_id": token_id,
+                                    "max_amount": amount
+                                }
+                            }
+                        ]
+                    },
+                    "amount": global_config.deposit_yocto
+                }
         return ret_data
 
     def repay_from_supplied_lp(self, amount: str, token_id: str, position: str):
-        return {
-            "contract_id": self._contract_id,
-            "method_name": "execute",
-            "args": {
-                "actions": [{
-                    "PositionRepay": {
-                        "position": position,
-                        "asset_amount": {
-                            "token_id": token_id,
-                            "amount": amount
+        if amount == "0":
+            ret = {
+                "contract_id": self._contract_id,
+                "method_name": "execute",
+                "args": {
+                    "actions": [{
+                        "PositionRepay": {
+                            "position": position,
+                            "asset_amount": {
+                                "token_id": token_id,
+                            }
                         }
-                    }
-                }]
-            },
-            "amount": global_config.deposit_yocto
-        }
+                    }]
+                },
+                "amount": global_config.deposit_yocto
+            }
+        else:
+            ret = {
+                "contract_id": self._contract_id,
+                "method_name": "execute",
+                "args": {
+                    "actions": [{
+                        "PositionRepay": {
+                            "position": position,
+                            "asset_amount": {
+                                "token_id": token_id,
+                                "amount": amount
+                            }
+                        }
+                    }]
+                },
+                "amount": global_config.deposit_yocto
+            }
+        return ret
 
     def storage_deposit(self, account_id: str, amount: float):
         return {
@@ -402,16 +458,27 @@ class BurrowHandler:
         }
 
     def decrease_collateral(self, token_id: str, amount: str):
-        msg = {
-            "Execute": {
-                "actions": [{
-                    "DecreaseCollateral": {
-                        "token_id": token_id,
-                        "max_amount": amount
-                    }
-                }]
+        if amount == "0":
+            msg = {
+                "Execute": {
+                    "actions": [{
+                        "DecreaseCollateral": {
+                            "token_id": token_id,
+                        }
+                    }]
+                }
             }
-        }
+        else:
+            msg = {
+                "Execute": {
+                    "actions": [{
+                        "DecreaseCollateral": {
+                            "token_id": token_id,
+                            "max_amount": amount
+                        }
+                    }]
+                }
+            }
         return {
             "contract_id": self._contract_id,
             "method_name": "oracle_call",
@@ -423,14 +490,23 @@ class BurrowHandler:
         }
 
     def decrease_collateral_pyth(self, token_id: str, amount: str):
-        msg = {
-            "actions": [{
-                "DecreaseCollateral": {
-                    "token_id": token_id,
-                    "max_amount": amount
-                }
-            }]
-        }
+        if amount == "0":
+            msg = {
+                "actions": [{
+                    "DecreaseCollateral": {
+                        "token_id": token_id,
+                    }
+                }]
+            }
+        else:
+            msg = {
+                "actions": [{
+                    "DecreaseCollateral": {
+                        "token_id": token_id,
+                        "max_amount": amount
+                    }
+                }]
+            }
         return {
             "contract_id": self._contract_id,
             "method_name": "execute_with_pyth",
@@ -439,7 +515,19 @@ class BurrowHandler:
         }
 
     def decrease_collateral_pyth_lp(self, token_id: str, amount: str):
-        msg = {
+        if amount == "0":
+            msg = {
+                "actions": [{
+                    "PositionDecreaseCollateral": {
+                        "position": token_id,
+                        "asset_amount": {
+                            "token_id": token_id,
+                        }
+                    }
+                }]
+            }
+        else:
+            msg = {
                 "actions": [{
                     "PositionDecreaseCollateral": {
                         "position": token_id,
@@ -458,19 +546,33 @@ class BurrowHandler:
         }
 
     def decrease_collateral_lp(self, token_id: str, amount: str):
-        msg = {
-            "Execute": {
-                "actions": [{
-                    "PositionDecreaseCollateral": {
-                        "position": token_id,
-                        "asset_amount": {
-                            "token_id": token_id,
-                            "amount": amount
+        if amount == "0":
+            msg = {
+                "Execute": {
+                    "actions": [{
+                        "PositionDecreaseCollateral": {
+                            "position": token_id,
+                            "asset_amount": {
+                                "token_id": token_id,
+                            }
                         }
-                    }
-                }]
+                    }]
+                }
             }
-        }
+        else:
+            msg = {
+                "Execute": {
+                    "actions": [{
+                        "PositionDecreaseCollateral": {
+                            "position": token_id,
+                            "asset_amount": {
+                                "token_id": token_id,
+                                "amount": amount
+                            }
+                        }
+                    }]
+                }
+            }
         return {
             "contract_id": self._contract_id,
             "method_name": "oracle_call",
@@ -482,37 +584,70 @@ class BurrowHandler:
         }
 
     def increase_collateral(self, token_id: str, amount: str):
-        return {
-            "contract_id": self._contract_id,
-            "method_name": "execute",
-            "args": {
-                "actions": [{
-                    "IncreaseCollateral": {
-                        "token_id": token_id,
-                        "max_amount": amount
-                    }
-                }]
-            },
-            "amount": global_config.deposit_yocto
-        }
+        if amount == "0":
+            ret = {
+                "contract_id": self._contract_id,
+                "method_name": "execute",
+                "args": {
+                    "actions": [{
+                        "IncreaseCollateral": {
+                            "token_id": token_id,
+                        }
+                    }]
+                },
+                "amount": global_config.deposit_yocto
+            }
+        else:
+            ret = {
+                "contract_id": self._contract_id,
+                "method_name": "execute",
+                "args": {
+                    "actions": [{
+                        "IncreaseCollateral": {
+                            "token_id": token_id,
+                            "max_amount": amount
+                        }
+                    }]
+                },
+                "amount": global_config.deposit_yocto
+            }
+        return ret
 
     def increase_collateral_lp(self, token_id: str, amount: str):
-        return {
-            "contract_id": self._contract_id,
-            "method_name": "execute",
-            "args": {
-                "actions": [{
-                    "PositionIncreaseCollateral": {
-                        "position": token_id,
-                        "asset_amount": {
-                            "token_id": token_id,
-                            "amount": amount
+        if amount == "0":
+            ret = {
+                "contract_id": self._contract_id,
+                "method_name": "execute",
+                "args": {
+                    "actions": [{
+                        "PositionIncreaseCollateral": {
+                            "position": token_id,
+                            "asset_amount": {
+                                "token_id": token_id,
+                            }
                         }
-                    }
-                }]
-            },
-            "amount": global_config.deposit_yocto
-        }
+                    }]
+                },
+                "amount": global_config.deposit_yocto
+            }
+        else:
+            ret = {
+                "contract_id": self._contract_id,
+                "method_name": "execute",
+                "args": {
+                    "actions": [{
+                        "PositionIncreaseCollateral": {
+                            "position": token_id,
+                            "asset_amount": {
+                                "token_id": token_id,
+                                "amount": amount
+                            }
+                        }
+                    }]
+                },
+                "amount": global_config.deposit_yocto
+            }
+        return ret
 
     def get_assets(self):
         cache_key = 'get_assets' + self._contract_id
