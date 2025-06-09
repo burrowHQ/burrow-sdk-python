@@ -15,9 +15,10 @@ import logging
 from burrow.tool_util import error, is_number
 from burrow.circulating_supply import update_marketcap, get_circulating_supply
 from loguru import logger
+from burrow.rewards import get_rewards_data
 
 
-service_version = "20240221.01"
+service_version = "20250428.01"
 Welcome = 'Welcome to burrow SDK API server, ' + service_version
 app = Flask(__name__)
 
@@ -110,6 +111,8 @@ def handle_supply():
     try:
         request_data = request.get_json()
         token_id = request_data["token_id"]
+        if token_id is None or token_id == "":
+            return error("The required field is empty", "1002")
         is_collateral = request_data["is_collateral"]
         pool_id = ""
         if "pool_id" in request_data:
@@ -119,7 +122,7 @@ def handle_supply():
             amount = request_data["amount"]
     except Exception as e:
         return error("The required field is empty", "1002")
-    if token_id is None or token_id == "" or is_collateral is None or is_collateral == "":
+    if is_collateral is None or is_collateral == "":
         return error("The required field is empty", "1002")
     try:
         if token_id.startswith("shadow_ref_v1-"):
@@ -141,6 +144,9 @@ def handle_burrow():
         request_data = request.get_json()
         token_id = request_data["token_id"]
         amount = request_data["amount"]
+        position = ""
+        if "position" in request_data:
+            position = request_data["position"]
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -148,7 +154,7 @@ def handle_burrow():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return burrow(token_id, amount)
+        return burrow(token_id, amount, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -165,6 +171,9 @@ def handle_withdraw():
         amount = ""
         if "amount" in request_data:
             amount = request_data["amount"]
+        account_id = ""
+        if "account_id" in request_data:
+            account_id = request_data["account_id"]
     except Exception as e:
         return error("The required field is empty", "1002")
     if token_id is None or token_id == "":
@@ -177,7 +186,7 @@ def handle_withdraw():
         else:
             if not is_number(amount):
                 return error("Amount Non numeric", "1003")
-            return withdraw(token_id, amount)
+            return withdraw(token_id, amount, account_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -189,6 +198,9 @@ def handle_repay_from_wallet():
         request_data = request.get_json()
         token_id = request_data["token_id"]
         amount = request_data["amount"]
+        position = ""
+        if "position" in request_data:
+            position = request_data["position"]
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -196,7 +208,7 @@ def handle_repay_from_wallet():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return repay_from_wallet(token_id, amount)
+        return repay_from_wallet(token_id, amount, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -208,14 +220,20 @@ def handle_repay_from_supplied():
         request_data = request.get_json()
         token_id = request_data["token_id"]
         amount = request_data["amount"]
+        position = ""
+        if "position" in request_data:
+            position = request_data["position"]
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
+        account_id = ""
+        if "account_id" in request_data:
+            account_id = request_data["account_id"]
     except Exception as e:
         return error("The required field is empty", "1002")
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return repay_from_supplied(token_id, amount)
+        return repay_from_supplied(token_id, amount, position, account_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -264,6 +282,10 @@ def handle_decrease_collateral():
         request_data = request.get_json()
         token_id = request_data["token_id"]
         amount = request_data["amount"]
+        if "position" in request_data:
+            position = request_data["position"]
+        else:
+            position = token_id
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -271,7 +293,7 @@ def handle_decrease_collateral():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return decrease_collateral(token_id, amount)
+        return decrease_collateral(token_id, amount, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -371,7 +393,16 @@ def handle_max_supply_balance(account_id, token):
 @app.route('/max_burrow_balance/<account_id>/<token>', methods=['GET'])
 def handle_max_burrow_balance(account_id, token):
     try:
-        return max_burrow_balance(account_id, token)
+        return max_burrow_balance(account_id, token, "")
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/max_burrow_balance/<account_id>/<token>/<position>', methods=['GET'])
+def handle_max_burrow_balance_lp(account_id, token, position):
+    try:
+        return max_burrow_balance(account_id, token, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -398,7 +429,16 @@ def handle_max_adjust_balance(account_id, token):
 @app.route('/max_repay_from_wallet/<account_id>/<token>', methods=['GET'])
 def handle_max_repay_from_wallet(account_id, token):
     try:
-        return max_repay_from_wallet(account_id, token)
+        return max_repay_from_wallet(account_id, token, token)
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/max_repay_from_wallet/<account_id>/<token>/<position>', methods=['GET'])
+def handle_max_repay_from_wallet_lp(account_id, token, position):
+    try:
+        return max_repay_from_wallet(account_id, token, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -407,7 +447,16 @@ def handle_max_repay_from_wallet(account_id, token):
 @app.route('/max_repay_from_account/<account_id>/<token>', methods=['GET'])
 def handle_max_repay_from_account(account_id, token):
     try:
-        return max_repay_from_account(account_id, token)
+        return max_repay_from_account(account_id, token, token)
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/max_repay_from_account/<account_id>/<token>/<position>', methods=['GET'])
+def handle_max_repay_from_account_lp(account_id, token, position):
+    try:
+        return max_repay_from_account(account_id, token, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -454,6 +503,10 @@ def handle_burrow_health_factor():
         token_id = request_data["token_id"]
         amount = request_data["amount"]
         account_id = request_data["account_id"]
+        if "position" in request_data:
+            position = request_data["position"]
+        else:
+            position = token_id
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -461,7 +514,7 @@ def handle_burrow_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return burrow_health_factor(token_id, account_id, amount, True)
+        return burrow_health_factor(token_id, account_id, amount, True, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -534,6 +587,10 @@ def handle_repay_from_wallet_health_factor():
         token_id = request_data["token_id"]
         amount = request_data["amount"]
         account_id = request_data["account_id"]
+        if "position" in request_data:
+            position = request_data["position"]
+        else:
+            position = token_id
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -541,7 +598,7 @@ def handle_repay_from_wallet_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return burrow_health_factor(token_id, account_id, amount, False)
+        return burrow_health_factor(token_id, account_id, amount, False, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -554,6 +611,10 @@ def handle_repay_from_account_health_factor():
         token_id = request_data["token_id"]
         amount = request_data["amount"]
         account_id = request_data["account_id"]
+        if "position" in request_data:
+            position = request_data["position"]
+        else:
+            position = token_id
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
@@ -561,7 +622,8 @@ def handle_repay_from_account_health_factor():
     if token_id is None or token_id == "":
         return error("The required field is empty", "1002")
     try:
-        return repay_from_account_health_factor(token_id, account_id, amount)
+        # return repay_from_account_health_factor(token_id, account_id, amount, position)
+        return burrow_health_factor(token_id, account_id, amount, False, position)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -633,14 +695,25 @@ def handle_get_pool_shares():
 def handle_get_shadow_records():
     try:
         request_data = request.get_json()
-        contract_id = request_data["contract_id"]
         account_id = request_data["account_id"]
     except Exception as e:
         return error("The required field is empty", "1002")
-    if contract_id is None or contract_id == "" or account_id is None or account_id == "":
+    if account_id is None or account_id == "":
         return error("The required field is empty", "1002")
     try:
-        return get_shadow_records(contract_id, account_id)
+        return get_shadow_records(account_id)
+    except Exception as e:
+        msg = str(e.args)
+        return error(msg, "1001")
+
+
+@app.route('/get_rewards', methods=['GET'])
+def handle_get_rewards():
+    try:
+        import asyncio
+        from flask import jsonify
+        ret = asyncio.run(get_rewards_data())
+        return jsonify(ret)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
