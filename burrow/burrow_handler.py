@@ -258,8 +258,10 @@ def list_token_data():
                 reward_usd = 0
                 principal_usd = 0
                 for reward_token, farm_reward in farm_rewards.items():
-                    reward_usd += int(farm_reward["reward_per_day"]) / multiply_decimals(token_price_data[reward_token]["decimals"]) * token_price_data[reward_token]["price"] * 365
-                    principal_usd += int(farm_reward["boosted_shares"]) / multiply_decimals(token_price_data[net_token]["decimals"]) * token_price_data[net_token]["price"]
+                    if reward_token in token_price_data:
+                        reward_usd += int(farm_reward["reward_per_day"]) / multiply_decimals(token_price_data[reward_token]["decimals"]) * token_price_data[reward_token]["price"] * 365
+                    if net_token in token_price_data:
+                        principal_usd += int(farm_reward["boosted_shares"]) / multiply_decimals(token_price_data[net_token]["decimals"]) * token_price_data[net_token]["price"]
                 if reward_usd > 0 and principal_usd > 0:
                     net_token_apy_data[net_token] = handler_decimal((reward_usd / principal_usd) * 100, 2)
     if global_config.burrow_token in ret_farm_data:
