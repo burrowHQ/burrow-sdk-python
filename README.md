@@ -18,7 +18,7 @@
 
 ## NETWORK
 - **TEST_URL**:https://test-api.burrow.finance
-- **PROD_URL**:https://api.burrow.finance
+- **PROD_URL**:https://lendingsdk.rhea.finance
 
 ---
 
