@@ -906,6 +906,20 @@ class BurrowHandler:
             cache[cache_key] = ret
         return cache_value
 
+    def get_high_precision_virtual_price(self):
+        cache_key = 'get_high_precision_virtual_price' + self._contract_id
+        cache_value = cache.get(cache_key, None)
+        if cache_value is None:
+            ret = self._signer.view_function(
+                self._contract_id,
+                "get_high_precision_virtual_price",
+                {
+                }
+            )['result']
+            cache_value = ret
+            cache[cache_key] = ret
+        return cache_value
+
     def get_price(self, price_identifier):
         cache_key = 'get_price' + self._contract_id + price_identifier
         cache_value = cache.get(cache_key, None)

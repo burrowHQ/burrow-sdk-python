@@ -109,6 +109,7 @@ def get_pyth_oracle_price():
     token_pyth_infos = burrow_handler.get_all_token_pyth_infos()
     # print("get_all_token_pyth_infos:", token_pyth_infos)
     near_price = 0
+    xrhea_pyth_price = 0
     for key, values in token_pyth_infos.items():
         if values["default_price"] is not None:
             pyth_price_data = {"multiplier": int(values["default_price"]["multiplier"]), "decimals": values["default_price"]["decimals"]}
@@ -122,6 +123,8 @@ def get_pyth_oracle_price():
                 usd_price = int(token_pyth_oracle_price["price"])*(10**(token_pyth_oracle_price["expo"]))
                 if key == global_config.near_contract:
                     near_price = usd_price
+                if key == global_config.xrhea_token_contract_id:
+                    xrhea_pyth_price = usd_price
             if "fraction_digits" in values and values["fraction_digits"] is not None:
                 fraction_digits = values["fraction_digits"]
             else:
@@ -147,6 +150,14 @@ def get_pyth_oracle_price():
                 burrow_handler = BurrowHandler(signer, global_config.stnear_token_contract_id)
                 get_st_near_price = burrow_handler.get_st_near_price()
                 usd_price = int(get_st_near_price) / (10 ** 24) * near_price
+            elif key == global_config.rnear_token_contract_id and global_config.rnear_token_contract_id != "":
+                burrow_handler = BurrowHandler(signer, global_config.rnear_token_contract_id)
+                rnear_price_ratio = burrow_handler.ft_price()
+                usd_price = int(rnear_price_ratio) / (10 ** 24) * near_price
+            elif key == global_config.xrhea_token_contract_id and global_config.xrhea_token_contract_id != "":
+                burrow_handler = BurrowHandler(signer, global_config.xrhea_token_contract_id)
+                xrhea_price_ratio = burrow_handler.get_high_precision_virtual_price()
+                usd_price = int(xrhea_price_ratio) / (10 ** 24) * xrhea_pyth_price
             else:
                 continue
             if "fraction_digits" in values and values["fraction_digits"] is not None:
@@ -230,6 +241,7 @@ def handle_supply_farm_apy(assets_data, token_price_data, extra_decimals):
 
 
 def list_token_data():
+    booster = 1.5
     ret_data_list = []
     assets_data_list = get_assets_paged_detailed()["data"]
     extra_decimals = handle_extra_decimals()
@@ -237,6 +249,7 @@ def list_token_data():
     token_price_data = handle_token_price(price_data_list)
     ret_farm_data = {}
     net_token_apy_data = {}
+    market_farm_apy_data = {}
     farm_data_list = get_asset_farms_paged()["data"]
     net_tvl_apy = 0
     for farm_data in farm_data_list:
@@ -257,13 +270,23 @@ def list_token_data():
                 farm_rewards = farm["rewards"]
                 reward_usd = 0
                 principal_usd = 0
+                market_farm_apy = 0.0
                 for reward_token, farm_reward in farm_rewards.items():
                     if reward_token in token_price_data:
                         reward_usd += int(farm_reward["reward_per_day"]) / multiply_decimals(token_price_data[reward_token]["decimals"]) * token_price_data[reward_token]["price"] * 365
                     if net_token in token_price_data:
                         principal_usd += int(farm_reward["boosted_shares"]) / multiply_decimals(token_price_data[net_token]["decimals"]) * token_price_data[net_token]["price"]
+                    if reward_token in token_price_data and net_token in token_price_data and reward_token in extra_decimals and net_token in extra_decimals:
+                        reward_dec = token_price_data[reward_token]["decimals"] + extra_decimals[reward_token]
+                        asset_dec = token_price_data[net_token]["decimals"] + extra_decimals[net_token]
+                        reward_per_day_usd = int(farm_reward["reward_per_day"]) / multiply_decimals(reward_dec) * 365 * token_price_data[reward_token]["price"]
+                        boosted_shares_usd = int(farm_reward["boosted_shares"]) / multiply_decimals(asset_dec) * token_price_data[net_token]["price"]
+                        if boosted_shares_usd > 0:
+                            market_farm_apy += (reward_per_day_usd / boosted_shares_usd) * 100
+                            print("market_farm_apy:", market_farm_apy)
                 if reward_usd > 0 and principal_usd > 0:
                     net_token_apy_data[net_token] = handler_decimal((reward_usd / principal_usd) * 100, 2)
+                market_farm_apy_data[net_token] = market_farm_apy
     if global_config.burrow_token in ret_farm_data:
         reward_per_day = (int(ret_farm_data[global_config.burrow_token]["reward_per_day"]) / multiply_decimals(19)) * float(token_price_data[global_config.burrow_token]["price"]) * 365
         boosted_shares = int(ret_farm_data[global_config.burrow_token]["boosted_shares"]) / multiply_decimals(19)
@@ -312,6 +335,13 @@ def list_token_data():
             ret_data["net_apy"] = net_token_apy_data[token_id]
         else:
             ret_data["net_apy"] = "0.0"
+        if token_id in market_farm_apy_data:
+            farm_apy = market_farm_apy_data[token_id]
+            ret_data["min_farm_apy"] = handler_decimal(farm_apy, 2)
+            ret_data["max_farm_apy"] = handler_decimal(farm_apy * booster, 2)
+        else:
+            ret_data["min_farm_apy"] = "0.00"
+            ret_data["max_farm_apy"] = "0.00"
         ret_data_list.append(ret_data)
     return success(ret_data_list)
 
@@ -1459,5 +1489,7 @@ if __name__ == "__main__":
     # aa = burrow_health_factor("usdc.fakes.testnet", "juaner.testnet", "1000000000000000000000000", True, "shadow_ref_v1-711")
     # print(aa)
 
-    aa = decrease_collateral("dai.fakes.testnet", "1000000000000000000000000", "shadow_ref_v1-711")
-    print(aa)
+    # aa = decrease_collateral("dai.fakes.testnet", "1000000000000000000000000", "shadow_ref_v1-711")
+    # print(aa)
+
+    list_token_data()
