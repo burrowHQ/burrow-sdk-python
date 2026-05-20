@@ -500,7 +500,7 @@ def repay_from_supplied(token_id, amount, position, account_id):
                         supplied_amount += int(supplied_data["balance"])
             if int(max_amount) > supplied_amount:
                 decrease_amount = int(max_amount) - supplied_amount
-        method_name = "execute"
+        method_name = "execute_with_pyth"
         if decrease_amount > 0:
             method_name = "oracle_call"
             burrow_contract_config = get_config()["data"]
@@ -582,9 +582,9 @@ def account_stake_booster(amount, duration, booster_token_id):
     return success(ret)
 
 
-def account_unstake_booster():
+def account_unstake_booster(booster_token_id):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
-    ret = burrow_handler.account_unstake_booster()
+    ret = burrow_handler.account_unstake_booster(booster_token_id)
     return success(ret)
 
 

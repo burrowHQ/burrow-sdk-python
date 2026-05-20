@@ -357,8 +357,10 @@ def handle_account_stake_booster():
 
 @app.route('/account_unstake_booster', methods=['POST'])
 def handle_account_unstake_booster():
+    request_data = request.get_json()
+    booster_token_id = request_data["booster_token_id"]
     try:
-        return account_unstake_booster()
+        return account_unstake_booster(booster_token_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")

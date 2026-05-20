@@ -157,7 +157,7 @@ class BurrowHandler:
             "method_name": "oracle_call",
             "args": {
                 "receiver_id": global_config.burrow_contract,
-                "msg": json.dumps(msg)
+                "msg": msg
             },
             "amount": global_config.deposit_yocto
         }
@@ -186,7 +186,7 @@ class BurrowHandler:
             "method_name": "oracle_call",
             "args": {
                 "receiver_id": self._contract_id,
-                "msg": json.dumps(msg)
+                "msg": msg
             },
             "amount": global_config.deposit_yocto
         }
@@ -208,7 +208,7 @@ class BurrowHandler:
         return {
             "contract_id": global_config.burrow_contract,
             "method_name": "execute_with_pyth",
-            "args": json.dumps(msg),
+            "args": msg,
             "amount": global_config.deposit_yocto
         }
 
@@ -232,7 +232,7 @@ class BurrowHandler:
         return {
             "contract_id": self._contract_id,
             "method_name": "execute_with_pyth",
-            "args": json.dumps(msg),
+            "args": msg,
             "amount": global_config.deposit_yocto
         }
 
@@ -484,7 +484,7 @@ class BurrowHandler:
             "method_name": "oracle_call",
             "args": {
                 "receiver_id": global_config.burrow_contract,
-                "msg": json.dumps(msg)
+                "msg": msg
             },
             "amount": global_config.deposit_yocto
         }
@@ -510,7 +510,7 @@ class BurrowHandler:
         return {
             "contract_id": self._contract_id,
             "method_name": "execute_with_pyth",
-            "args": json.dumps(msg),
+            "args": msg,
             "amount": global_config.deposit_yocto
         }
 
@@ -541,7 +541,7 @@ class BurrowHandler:
         return {
             "contract_id": self._contract_id,
             "method_name": "execute_with_pyth",
-            "args": json.dumps(msg),
+            "args": msg,
             "amount": global_config.deposit_yocto
         }
 
@@ -578,7 +578,7 @@ class BurrowHandler:
             "method_name": "oracle_call",
             "args": {
                 "receiver_id": global_config.burrow_contract,
-                "msg": json.dumps(msg)
+                "msg": msg
             },
             "amount": global_config.deposit_yocto
         }
@@ -587,7 +587,7 @@ class BurrowHandler:
         if amount == "0":
             ret = {
                 "contract_id": self._contract_id,
-                "method_name": "execute",
+                "method_name": "execute_with_pyth",
                 "args": {
                     "actions": [{
                         "IncreaseCollateral": {
@@ -600,7 +600,7 @@ class BurrowHandler:
         else:
             ret = {
                 "contract_id": self._contract_id,
-                "method_name": "execute",
+                "method_name": "execute_with_pyth",
                 "args": {
                     "actions": [{
                         "IncreaseCollateral": {
@@ -617,7 +617,7 @@ class BurrowHandler:
         if amount == "0":
             ret = {
                 "contract_id": self._contract_id,
-                "method_name": "execute",
+                "method_name": "execute_with_pyth",
                 "args": {
                     "actions": [{
                         "PositionIncreaseCollateral": {
@@ -633,7 +633,7 @@ class BurrowHandler:
         else:
             ret = {
                 "contract_id": self._contract_id,
-                "method_name": "execute",
+                "method_name": "execute_with_pyth",
                 "args": {
                     "actions": [{
                         "PositionIncreaseCollateral": {
@@ -690,12 +690,12 @@ class BurrowHandler:
             },
         }
 
-    def account_unstake_booster(self):
+    def account_unstake_booster(self, booster_token_id: str):
         return {
             "contract_id": self._contract_id,
             "method_name": "account_unstake_booster",
             "args": {
-                "receiver_id": global_config.burrow_contract
+                "booster_token_id": booster_token_id
             },
         }
 
