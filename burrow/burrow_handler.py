@@ -5,7 +5,7 @@ import json
 from contract_handler import BurrowHandler
 import globals
 from config import GlobalConfig
-from tool_util import success, error, new_success
+from tool_util import success, error, new_success, FT_METADATA_FALLBACKS
 
 global_config = GlobalConfig()
 signer = globals.get_signer_account(global_config.signer_account_id)
@@ -52,13 +52,7 @@ def multiply_decimals(decimals: int):
 
 
 def handler_decimal(number, index):
-    # return ("{:.%sf}" % index).format(number)
-    import decimal
-    decimal.getcontext().prec = 30
-    x = decimal.Decimal(str(number))
-    x_str = str(x)
-    result = decimal.Decimal(x_str[:x_str.index('.') + 1 + index])
-    return result
+    return ("{:.%sf}" % index).format(number)
 
 
 def storage_balance_of(account_id, token_id):
@@ -211,6 +205,16 @@ def handle_token_price(price_data_list):
         except Exception as e:
             print("ft_metadata error:", e.args)
             print("asset_id:", price_data["asset_id"])
+            fallback = FT_METADATA_FALLBACKS.get(price_data["asset_id"])
+            if fallback is not None and price is not None:
+                p = int(price["multiplier"]) / multiply_decimals(
+                    price["decimals"] - fallback["decimals"]
+                )
+                token_price_data[price_data["asset_id"]] = {
+                    "price": p,
+                    "symbol": fallback["symbol"],
+                    "decimals": fallback["decimals"],
+                }
     for key, value in price_list.items():
         token_price_data[key] = {"price": float(value["price"]), "symbol": value["symbol"], "decimals": value["decimal"]}
     return token_price_data
@@ -507,7 +511,7 @@ def repay_from_supplied(token_id, amount, position, account_id):
 
 
 def near_withdraw(amount):
-    burrow_handler = BurrowHandler(signer, global_config.near_contract)
+    burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
     assets_paged_detailed_list = burrow_handler.get_assets_paged_detailed()
     check_withdraw = True
     for assets_paged_detailed in assets_paged_detailed_list:
@@ -572,9 +576,9 @@ def get_assets():
     return success(ret)
 
 
-def account_stake_booster(amount, duration):
+def account_stake_booster(amount, duration, booster_token_id):
     burrow_handler = BurrowHandler(signer, global_config.burrow_contract)
-    ret = burrow_handler.account_stake_booster(amount, duration)
+    ret = burrow_handler.account_stake_booster(amount, duration, booster_token_id)
     return success(ret)
 
 

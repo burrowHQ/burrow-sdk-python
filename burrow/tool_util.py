@@ -1,5 +1,15 @@
 from decimal import Decimal
 
+# ft_metadata view fails on some contracts (e.g. aurora uses used_gas in view)
+FT_METADATA_FALLBACKS = {
+    "aurora": {
+        "spec": "ft-1.0.0",
+        "name": "Ether",
+        "symbol": "ETH",
+        "decimals": 18,
+    },
+}
+
 
 def success(data=None):
     ret = {

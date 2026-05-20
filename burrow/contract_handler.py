@@ -679,12 +679,12 @@ class BurrowHandler:
             cache_10s[cache_key] = ret
         return cache_value
 
-    def account_stake_booster(self, amount: str, duration: int):
+    def account_stake_booster(self, amount: str, duration: int, booster_token_id: str):
         return {
             "contract_id": self._contract_id,
             "method_name": "account_stake_booster",
             "args": {
-                "receiver_id": global_config.burrow_contract,
+                "booster_token_id": booster_token_id,
                 "amount": amount,
                 "duration": duration
             },
