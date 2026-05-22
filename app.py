@@ -343,12 +343,13 @@ def handle_account_stake_booster():
         request_data = request.get_json()
         amount = request_data["amount"]
         duration = request_data["duration"]
+        booster_token_id = request_data["booster_token_id"]
         if not is_number(amount):
             return error("Amount Non numeric", "1003")
     except Exception as e:
         return error("The required field is empty", "1002")
     try:
-        return account_stake_booster(amount, duration)
+        return account_stake_booster(amount, duration, booster_token_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")
@@ -356,8 +357,10 @@ def handle_account_stake_booster():
 
 @app.route('/account_unstake_booster', methods=['POST'])
 def handle_account_unstake_booster():
+    request_data = request.get_json()
+    booster_token_id = request_data["booster_token_id"]
     try:
-        return account_unstake_booster()
+        return account_unstake_booster(booster_token_id)
     except Exception as e:
         msg = str(e.args)
         return error(msg, "1001")

@@ -1,16 +1,17 @@
 import sys
 sys.path.append('../')
 import asyncio
+import logging
 import requests
 import json
 from decimal import Decimal
-from burrow_handler import ft_contract_call
-from tool_util import transform_contract_assets, get_total_balance, shrink_token, sum_reducer, to_usd
+from burrow_handler import ft_contract_call, get_price_data
+from tool_util import transform_contract_assets, get_total_balance, shrink_token, sum_reducer, to_usd, FT_METADATA_FALLBACKS
 from config import GlobalConfig
 
 global_config = GlobalConfig()
+logger = logging.getLogger(__name__)
 token_list = ["usdt.tether-token.near", "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1", "853d955acef822db058eb8505911ed77f175b99e.factory.bridge.near"]
-
 
 async def async_ft_contract_call(method, args, contract_name=global_config.burrow_contract):
     loop_ = asyncio.get_event_loop()
@@ -22,16 +23,31 @@ async def get_assets():
     # print("assets:", assets)
     token_ids = [id_ for id_, _ in assets]
     # print("token_ids:", token_ids)
-    assets_detailed_coroutines = [async_ft_contract_call("get_asset", {"token_id": token_id}) for token_id in token_ids
-                                  if not token_id.startswith('shadow_ref_')]
-    assets_detailed = await asyncio.gather(*assets_detailed_coroutines)
-    # print("assets_detailed:", assets_detailed)
-    metadata = await asyncio.gather(*[async_ft_contract_call("ft_metadata", {}, token_id) for token_id in token_ids if
-                                      not token_id.startswith('shadow_ref_')])
-    # print("metadata:", metadata)
-    config = ft_contract_call("get_config", {})
-    # print("config:", config)
-    prices = ft_contract_call("get_price_data", {}, config["oracle_account_id"])
+    filtered_token_ids = [token_id for token_id in token_ids if not token_id.startswith('shadow_ref_')]
+    assets_detailed_raw = await asyncio.gather(
+        *[async_ft_contract_call("get_asset", {"token_id": token_id}) for token_id in filtered_token_ids],
+        return_exceptions=True,
+    )
+    metadata_raw = await asyncio.gather(
+        *[async_ft_contract_call("ft_metadata", {}, token_id) for token_id in filtered_token_ids],
+        return_exceptions=True,
+    )
+    assets_detailed = []
+    metadata = []
+    for token_id, asset, meta in zip(filtered_token_ids, assets_detailed_raw, metadata_raw):
+        if isinstance(asset, BaseException):
+            logger.warning("get_asset failed for %s: %s", token_id, asset)
+            continue
+        if isinstance(meta, BaseException):
+            err = meta
+            meta = FT_METADATA_FALLBACKS.get(token_id)
+            if meta is None:
+                logger.warning("ft_metadata failed for %s: %s", token_id, err)
+                continue
+            logger.warning("ft_metadata failed for %s: %s, using fallback metadata", token_id, err)
+        assets_detailed.append(asset)
+        metadata.append(meta)
+    prices = get_price_data()["data"]
     # print("prices:", prices)
     ref_prices = fetch_ref_prices("https://raw.githubusercontent.com/NearDeFi/token-prices/main/ref-prices.json")
     # print("ref_prices:", ref_prices)
@@ -65,6 +81,9 @@ async def get_net_liquidity_apy(assets):
     total_daily_net_liquidity_rewards = 0
     supplied = 0
     for reward_token_id, farm in net_liquidity_farm['rewards'].items():
+        if reward_token_id not in assets:
+            logger.warning("reward token %s not in assets, skipping NetTvl reward", reward_token_id)
+            continue
         total_daily_net_liquidity_rewards += float(shrink_token(farm['reward_per_day'],
                                                                 assets[reward_token_id]['metadata']['decimals'] +
                                                                 assets[reward_token_id]['config']['extra_decimals']) *
@@ -74,7 +93,11 @@ async def get_net_liquidity_apy(assets):
     # borrowed = get_total_balance(assets, 'borrowed')
 
     total_protocol_liquidity = supplied
-    net_liquidity_apy = ((total_daily_net_liquidity_rewards * 365) / total_protocol_liquidity) * 100
+    if total_protocol_liquidity == 0:
+        logger.warning("NetTvl total_protocol_liquidity is 0, net_liquidity_apy set to 0")
+        net_liquidity_apy = 0.0
+    else:
+        net_liquidity_apy = ((total_daily_net_liquidity_rewards * 365) / total_protocol_liquidity) * 100
 
     reward_tokens = [reward_token_id for reward_token_id in net_liquidity_farm['rewards']]
     print("a:", total_daily_net_liquidity_rewards * 365)
@@ -97,7 +120,8 @@ async def get_rewards(assets):
         total_borrow_usd = total_borrow_usd if total_borrow_usd > 0 else 0
 
         supplied_farm_rewards = next(
-            (farm['rewards'] for farm in asset['farms'] if farm['farm_id']['Supplied'] == token_id), {})
+            (farm['rewards'] for farm in asset['farms']
+             if 'Supplied' in farm['farm_id'] and farm['farm_id']['Supplied'] == token_id), {})
 
         reward_tokens = uniq(
             list(supplied_farm_rewards.keys()) + reward_tokens_tvl

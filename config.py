@@ -25,6 +25,8 @@ class GlobalConfig:
             self._nearx_token_contract_id = "v2-nearx.stader-labs.near"
             self._linear_token_contract_id = "linear-protocol.near"
             self._stnear_token_contract_id = "meta-pool.near"
+            self._rnear_token_contract_id = "lst.rhealab.near"
+            self._xrhea_token_contract_id = "xtoken.rhealab.near"
         elif self._near_env == "testnet":
             self._rpc_url = "https://rpc.testnet.near.org" if not os.getenv('NEAR_RPC_URL') else os.getenv('NEAR_RPC_URL')
             self._burrow_contract = "contract.1689937928.burrow.testnet"
@@ -39,6 +41,8 @@ class GlobalConfig:
             self._nearx_token_contract_id = "v2-nearx.staderlabs.testnet"
             self._linear_token_contract_id = "linear-protocol.testnet"
             self._stnear_token_contract_id = "meta-v2.pool.testnet"
+            self._rnear_token_contract_id = ""
+            self._xrhea_token_contract_id = ""
         else:
             raise Exception("Invalid NEAR_ENV!")
 
@@ -97,3 +101,11 @@ class GlobalConfig:
     @property
     def stnear_token_contract_id(self):
         return self._stnear_token_contract_id
+
+    @property
+    def rnear_token_contract_id(self):
+        return self._rnear_token_contract_id
+
+    @property
+    def xrhea_token_contract_id(self):
+        return self._xrhea_token_contract_id
