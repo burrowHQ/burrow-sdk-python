@@ -1126,27 +1126,48 @@ def account_apy(account_id, token):
             decimals = token_price_data[borrowed_data["token_id"]]["decimals"] + extra_decimals[borrowed_data["token_id"]]
             total_borrowed_amount += (int(borrowed_data["balance"]) / multiply_decimals(decimals) *
                                       token_price_data[borrowed_data["token_id"]]["price"])
+    total_net_amount = total_amount - total_borrowed_amount
+
+    def get_account_reward_apy(reward, principal_amount):
+        if principal_amount <= 0:
+            return None
+        reward_token_id = reward["reward_token_id"]
+        asset_farm_reward = reward["asset_farm_reward"]
+        total_boosted_shares = int(asset_farm_reward["boosted_shares"])
+        if total_boosted_shares <= 0:
+            return None
+        token_balance = int(reward["boosted_shares"]) / total_boosted_shares * int(asset_farm_reward["reward_per_day"])
+        decimals = token_price_data[reward_token_id]["decimals"] + extra_decimals[reward_token_id]
+        reward_amount = token_balance / multiply_decimals(decimals) * float(token_price_data[reward_token_id]["price"]) * 365
+        your_apy = reward_amount / principal_amount * 100
+        return reward_token_id, your_apy
+
     farms = account_data["farms"]
     for farm in farms:
         if "Supplied" in farm["farm_id"] and farm["farm_id"]["Supplied"] == token:
             for reward in farm["rewards"]:
-                reward_token_id = reward["reward_token_id"]
-                asset_farm_reward = reward["asset_farm_reward"]
-                token_balance = int(reward["boosted_shares"]) / int(asset_farm_reward["boosted_shares"]) * int(asset_farm_reward["reward_per_day"])
-                decimals = token_price_data[reward_token_id]["decimals"] + extra_decimals[reward_token_id]
-                reward_amount = int(token_balance) / multiply_decimals(decimals) * float(token_price_data[reward_token_id]["price"]) * 365
-                your_apy = reward_amount / total_amount * 100
+                reward_apy_data = get_account_reward_apy(reward, total_amount)
+                if reward_apy_data is None:
+                    continue
+                reward_token_id, your_apy = reward_apy_data
+                supplied_apy_data = {"token": reward_token_id, "your_apy": handler_decimal(your_apy, 2)}
+                supplied_apy_data_list.append(supplied_apy_data)
+                total_supplied_apy = total_supplied_apy + your_apy
+        if "TokenNetBalance" in farm["farm_id"] and farm["farm_id"]["TokenNetBalance"] == token:
+            for reward in farm["rewards"]:
+                reward_apy_data = get_account_reward_apy(reward, total_net_amount)
+                if reward_apy_data is None:
+                    continue
+                reward_token_id, your_apy = reward_apy_data
                 supplied_apy_data = {"token": reward_token_id, "your_apy": handler_decimal(your_apy, 2)}
                 supplied_apy_data_list.append(supplied_apy_data)
                 total_supplied_apy = total_supplied_apy + your_apy
         if "Borrowed" in farm["farm_id"] and farm["farm_id"]["Borrowed"] == token:
             for reward in farm["rewards"]:
-                reward_token_id = reward["reward_token_id"]
-                asset_farm_reward = reward["asset_farm_reward"]
-                token_balance = int(reward["boosted_shares"]) / int(asset_farm_reward["boosted_shares"]) * int(asset_farm_reward["reward_per_day"])
-                decimals = token_price_data[reward_token_id]["decimals"] + extra_decimals[reward_token_id]
-                reward_amount = int(token_balance) / multiply_decimals(decimals) * float(token_price_data[reward_token_id]["price"]) * 365
-                your_apy = reward_amount / total_borrowed_amount * 100
+                reward_apy_data = get_account_reward_apy(reward, total_borrowed_amount)
+                if reward_apy_data is None:
+                    continue
+                reward_token_id, your_apy = reward_apy_data
                 burrowed_apy_data = {"token": reward_token_id, "your_apy": "-" + str(handler_decimal(your_apy, 2))}
                 burrowed_apy_data_list.append(burrowed_apy_data)
                 total_burrowed_apy = total_burrowed_apy - your_apy
