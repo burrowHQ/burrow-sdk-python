@@ -69,6 +69,38 @@ def uniq(lst):
     return [x for x in lst if not (x in seen or seen.add(x))]
 
 
+def get_reward_usd_per_year(assets, reward_token_id, reward_per_day):
+    reward_asset = assets.get(reward_token_id)
+    if reward_asset is None:
+        logger.warning("reward token %s not in assets, skipping reward APY", reward_token_id)
+        return 0
+    decimals = reward_asset['metadata']['decimals'] + reward_asset['config']['extra_decimals']
+    price_usd = reward_asset.get('price', {}).get('usd', 0)
+    return float(reward_per_day) / (10 ** decimals) * 365 * price_usd
+
+
+def get_farm_apy_by_principal_usd(assets, farm_rewards, principal_usd):
+    if principal_usd <= 0:
+        return 0
+    reward_usd_per_year = sum(
+        get_reward_usd_per_year(assets, reward_token_id, reward['reward_per_day'])
+        for reward_token_id, reward in farm_rewards.items()
+    )
+    return reward_usd_per_year / principal_usd * 100
+
+
+def get_farm_apy_by_boosted_shares(assets, farm_rewards, asset):
+    asset_decimals = asset['metadata']['decimals'] + asset['config']['extra_decimals']
+    asset_price_usd = asset.get('price', {}).get('usd', 0)
+    apy = 0
+    for reward_token_id, reward in farm_rewards.items():
+        boosted_shares_usd = float(shrink_token(reward.get('boosted_shares', 0), asset_decimals)) * asset_price_usd
+        if boosted_shares_usd <= 0:
+            continue
+        apy += get_reward_usd_per_year(assets, reward_token_id, reward['reward_per_day']) / boosted_shares_usd * 100
+    return apy
+
+
 def get_decimals(assets, token_id):
     for asset in assets:
         if asset['token_id'] == token_id:
@@ -123,38 +155,24 @@ async def get_rewards(assets):
             (farm['rewards'] for farm in asset['farms']
              if 'Supplied' in farm['farm_id'] and farm['farm_id']['Supplied'] == token_id), {})
 
+        token_net_balance_farm_rewards = next(
+            (farm['rewards'] for farm in asset['farms']
+             if 'TokenNetBalance' in farm['farm_id'] and farm['farm_id']['TokenNetBalance'] == token_id), {})
+
         reward_tokens = uniq(
-            list(supplied_farm_rewards.keys()) + reward_tokens_tvl
+            list(supplied_farm_rewards.keys()) + list(token_net_balance_farm_rewards.keys()) + reward_tokens_tvl
         )
 
-        apy_reward = sum(
-            (
-                float(reward['reward_per_day']) / (10 ** (assets[reward_token_id]['metadata']['decimals'] +
-                                                          assets[reward_token_id]['config']['extra_decimals']))
-                * 365
-                * next((a.get('price', {}).get('usd', 0) for token_id, a in assets.items() if
-                        a['token_id'] == reward_token_id), 0)
-                / total_borrow_usd if total_borrow_usd != 0 else 0
-                * 100
-            )
-            for reward_token_id, reward in supplied_farm_rewards.items()
+        apy_reward = (
+            get_farm_apy_by_principal_usd(assets, supplied_farm_rewards, total_supply_usd)
+            + get_farm_apy_by_boosted_shares(assets, token_net_balance_farm_rewards, asset)
         )
 
         borrowed_farm_rewards = next(
             (farm['rewards'] for farm in asset['farms'] if 'Borrowed' in farm['farm_id'] and farm['farm_id']['Borrowed'] == token_id), {})
 
         reward_tokens_borrow = list(borrowed_farm_rewards.keys())
-        apy_reward_borrow = sum(
-            (
-                float(reward['reward_per_day']) / (10 ** (assets[reward_token_id]['metadata']['decimals'] +
-                                                          assets[reward_token_id]['config']['extra_decimals']))
-                * 365
-                * next((a.get('price', {}).get('usd', 0) for token_id, a in assets.items() if a['token_id'] == reward_token_id), 0)
-                / total_borrow_usd if total_borrow_usd != 0 else 0
-                * 100
-            )
-            for reward_token_id, reward in borrowed_farm_rewards.items()
-        )
+        apy_reward_borrow = get_farm_apy_by_principal_usd(assets, borrowed_farm_rewards, total_borrow_usd)
         if asset['token_id'] in token_list:
             ret_apy_reward_tvl = apy_reward_tvl
         else:
