@@ -2,6 +2,8 @@ import sys
 sys.path.append('./burrow')
 import requests
 import json
+import os
+from decimal import Decimal
 from contract_handler import BurrowHandler
 import globals
 from config import GlobalConfig
@@ -9,6 +11,41 @@ from tool_util import success, error, new_success, FT_METADATA_FALLBACKS
 
 global_config = GlobalConfig()
 signer = globals.get_signer_account(global_config.signer_account_id)
+
+LEGACY_PYTH_ORACLE_CONTRACT_ID = "pyth-oracle.near"
+PYTH_LAZER_PRICE_URL = os.getenv("PYTH_LAZER_PRICE_URL", "https://pyth-lazer.dourolabs.app/v1/latest_price")
+PYTH_LAZER_AUTH_TOKEN = os.getenv("PYTH_LAZER_AUTH_TOKEN", "")
+PYTH_LAZER_PRICE_FRACTION_DIGITS = 8
+PYTH_LAZER_PROPERTIES = [
+    "price",
+    "confidence",
+    "exponent",
+    "emaPrice",
+    "emaConfidence",
+    "feedUpdateTimestamp",
+]
+PYTH_LAZER_PRICE_FEED_IDS = {
+    "linear-protocol.near": 27,
+    "meta-pool.near": 27,
+    "v2-nearx.stader-labs.near": 27,
+    "wrap.near": 27,
+    "dac17f958d2ee523a2206206994597c13d831ec7.factory.bridge.near": 8,
+    "usdt.tether-token.near": 8,
+    "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1": 7,
+    "a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near": 7,
+    "6b175474e89094c44da98b954eedeac495271d0f.factory.bridge.near": 202,
+    "2260fac5e5542a773aa44fbcfedf7c193bc2c599.factory.bridge.near": 103,
+    "nbtc.bridge.near": 1,
+    "zec.omft.near": 66,
+    "aurora": 2,
+    "eth.bridge.near": 2,
+    "aaaaaa20d9e0e2461697782ef11675f668207961.factory.bridge.near": None,
+    "853d955acef822db058eb8505911ed77f175b99e.factory.bridge.near": 228,
+    "22.contract.portalbridge.near": None,
+    "4691937a7508860f876c9c0a2a617e7d9e945d4b.factory.bridge.near": None,
+    "lst.rhealab.near": None,
+    "xtoken.rhealab.near": None,
+}
 
 
 def get_account_near_balance(account_id):
@@ -85,8 +122,120 @@ def get_account(account_id):
     return success(ret)
 
 
+def get_token_metadata_for_price(token_id):
+    try:
+        return ft_metadata(token_id)["data"]
+    except Exception as e:
+        fallback = FT_METADATA_FALLBACKS.get(token_id)
+        if fallback is not None:
+            return fallback
+        print("ft_metadata error while building Lazer price:", e.args)
+        print("asset_id:", token_id)
+        return None
+
+
+def make_lazer_oracle_price_data(token_id, usd_price):
+    token_metadata = get_token_metadata_for_price(token_id)
+    if token_metadata is None:
+        return None
+    multiplier = int(Decimal(str(usd_price)) * (Decimal(10) ** PYTH_LAZER_PRICE_FRACTION_DIGITS))
+    return {
+        "asset_id": token_id,
+        "price": {
+            "multiplier": multiplier,
+            "decimals": int(token_metadata["decimals"]) + PYTH_LAZER_PRICE_FRACTION_DIGITS,
+        },
+    }
+
+
+def get_pyth_lazer_price_data():
+    import time
+    if not PYTH_LAZER_AUTH_TOKEN:
+        raise Exception("Missing PYTH_LAZER_AUTH_TOKEN for Lazer/aggregate oracle price source")
+
+    feed_ids = sorted({
+        int(feed_id)
+        for feed_id in PYTH_LAZER_PRICE_FEED_IDS.values()
+        if feed_id is not None
+    })
+    response = requests.post(
+        PYTH_LAZER_PRICE_URL,
+        headers={
+            "Authorization": "Bearer " + PYTH_LAZER_AUTH_TOKEN,
+            "Content-Type": "application/json",
+        },
+        json={
+            "priceFeedIds": feed_ids,
+            "properties": PYTH_LAZER_PROPERTIES,
+            "formats": ["solana"],
+            "channel": "fixed_rate@1000ms",
+            "parsed": True,
+        },
+        timeout=20,
+    )
+    response.raise_for_status()
+    body = response.json()
+
+    feed_prices = {}
+    parsed = body.get("parsed") or {}
+    for item in parsed.get("priceFeeds") or []:
+        feed_id = item.get("priceFeedId")
+        if feed_id is None:
+            continue
+        raw_price = Decimal(str(item.get("price") or "0"))
+        exponent = int(item.get("exponent") or 0)
+        feed_prices[int(feed_id)] = raw_price * (Decimal(10) ** exponent)
+
+    price_list = []
+    near_feed_id = PYTH_LAZER_PRICE_FEED_IDS.get(global_config.near_contract)
+    near_price = feed_prices.get(near_feed_id, Decimal("0"))
+    xrhea_feed_id = PYTH_LAZER_PRICE_FEED_IDS.get(global_config.xrhea_token_contract_id)
+    xrhea_base_price = feed_prices.get(xrhea_feed_id, Decimal("0"))
+
+    for token_id, feed_id in PYTH_LAZER_PRICE_FEED_IDS.items():
+        if feed_id is None or int(feed_id) not in feed_prices:
+            continue
+        price_data = make_lazer_oracle_price_data(token_id, feed_prices[int(feed_id)])
+        if price_data is not None:
+            price_list.append(price_data)
+
+    derived_prices = {}
+    if near_price > 0:
+        if global_config.nearx_token_contract_id in PYTH_LAZER_PRICE_FEED_IDS:
+            burrow_handler = BurrowHandler(signer, global_config.nearx_token_contract_id)
+            nearx_price_ratio = burrow_handler.get_nearx_price()
+            derived_prices[global_config.nearx_token_contract_id] = Decimal(int(nearx_price_ratio)) / (Decimal(10) ** 24) * near_price
+        if global_config.linear_token_contract_id in PYTH_LAZER_PRICE_FEED_IDS:
+            burrow_handler = BurrowHandler(signer, global_config.linear_token_contract_id)
+            linear_price_ratio = burrow_handler.ft_price()
+            derived_prices[global_config.linear_token_contract_id] = Decimal(int(linear_price_ratio)) / (Decimal(10) ** 24) * near_price
+        if global_config.stnear_token_contract_id in PYTH_LAZER_PRICE_FEED_IDS:
+            burrow_handler = BurrowHandler(signer, global_config.stnear_token_contract_id)
+            stnear_price_ratio = burrow_handler.get_st_near_price()
+            derived_prices[global_config.stnear_token_contract_id] = Decimal(int(stnear_price_ratio)) / (Decimal(10) ** 24) * near_price
+        if global_config.rnear_token_contract_id in PYTH_LAZER_PRICE_FEED_IDS and global_config.rnear_token_contract_id != "":
+            burrow_handler = BurrowHandler(signer, global_config.rnear_token_contract_id)
+            rnear_price_ratio = burrow_handler.ft_price()
+            derived_prices[global_config.rnear_token_contract_id] = Decimal(int(rnear_price_ratio)) / (Decimal(10) ** 24) * near_price
+    if xrhea_base_price > 0 and global_config.xrhea_token_contract_id in PYTH_LAZER_PRICE_FEED_IDS and global_config.xrhea_token_contract_id != "":
+        burrow_handler = BurrowHandler(signer, global_config.xrhea_token_contract_id)
+        xrhea_price_ratio = burrow_handler.get_high_precision_virtual_price()
+        derived_prices[global_config.xrhea_token_contract_id] = Decimal(int(xrhea_price_ratio)) / (Decimal(10) ** 24) * xrhea_base_price
+
+    for token_id, usd_price in derived_prices.items():
+        price_data = make_lazer_oracle_price_data(token_id, usd_price)
+        if price_data is not None:
+            price_list.append(price_data)
+
+    return {"timestamp": int(time.time()) * 1000000000, "prices": price_list}
+
+
 def get_price_data():
     burrow_contract_config = get_config()["data"]
+    pyth_oracle_account_id = str(burrow_contract_config.get("pyth_oracle_account_id") or global_config.pyth_oracle_contract_id)
+    if pyth_oracle_account_id != LEGACY_PYTH_ORACLE_CONTRACT_ID:
+        ret = get_pyth_lazer_price_data()
+        return success(ret)
     if "enable_pyth_oracle" in burrow_contract_config and burrow_contract_config["enable_pyth_oracle"] is True:
         ret = get_pyth_oracle_price()
     else:
